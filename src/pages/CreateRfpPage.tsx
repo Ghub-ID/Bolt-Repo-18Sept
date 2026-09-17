@@ -8,6 +8,7 @@ import {
   CHARTER_LABELS,
   CHARTER_ORDER,
   TBC_DROPDOWN_OPTIONS,
+  DEFAULT_CHARTER,
   type RfpCharter,
 } from '@/context/RfpCharterContext';
 
@@ -52,13 +53,14 @@ function stripRfpJson(text: string): string {
 
 export default function CreateRfpPage() {
   const navigate = useNavigate();
-  const { charter, setCharter, updateField } = useRfpCharter();
+  const { charter, setCharter } = useRfpCharter();
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [charterGenerated, setCharterGenerated] = useState(false);
   const [sent, setSent] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<RfpCharter>(DEFAULT_CHARTER);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -117,11 +119,37 @@ export default function CreateRfpPage() {
     }
   };
 
-  const startEdit = () => setEditing(true);
+  const startEdit = () => {
+    setDraft({ ...charter, tbc_fields: [...charter.tbc_fields] });
+    setIsEditing(true);
+  };
 
-  const saveEdit = () => setEditing(false);
+  const saveEdit = () => {
+    const cleanedTbc = draft.tbc_fields.filter((f) => {
+      const val = String(draft[f as keyof Omit<RfpCharter, 'tbc_fields'>]).toUpperCase();
+      return val === 'TBC';
+    });
+    setCharter({ ...draft, tbc_fields: cleanedTbc });
+    setIsEditing(false);
+  };
 
-  const cancelEdit = () => setEditing(false);
+  const cancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const updateDraft = (field: keyof Omit<RfpCharter, 'tbc_fields'>, value: string | number) => {
+    setDraft((prev) => {
+      const isTbc = String(value).toUpperCase() === 'TBC';
+      const wasTbc = prev.tbc_fields.includes(field);
+      let newTbcFields = [...prev.tbc_fields];
+      if (!isTbc && wasTbc) {
+        newTbcFields = newTbcFields.filter((f) => f !== field);
+      } else if (isTbc && !wasTbc) {
+        newTbcFields = [...newTbcFields, field];
+      }
+      return { ...prev, [field]: value, tbc_fields: newTbcFields };
+    });
+  };
 
   const handleSentDone = () => {
     setSent(false);
@@ -186,11 +214,11 @@ export default function CreateRfpPage() {
               </div>
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                 {CHARTER_ORDER.map((key) => {
-                  const isTbc = charter.tbc_fields.includes(key);
-                  const value = String(charter[key]);
-                  const hasDropdown = editing && isTbc && TBC_DROPDOWN_OPTIONS[key];
+                  const isTbc = isEditing ? draft.tbc_fields.includes(key) : charter.tbc_fields.includes(key);
+                  const value = isEditing ? String(draft[key]) : String(charter[key]);
+                  const hasDropdown = isEditing && isTbc && TBC_DROPDOWN_OPTIONS[key];
 
-                  if (editing) {
+                  if (isEditing) {
                     if (hasDropdown) {
                       return (
                         <div key={key} className="py-1.5 border-b border-ink-100 last:border-0">
@@ -202,7 +230,7 @@ export default function CreateRfpPage() {
                           </label>
                           <select
                             value={value}
-                            onChange={(e) => updateField(key, e.target.value)}
+                            onChange={(e) => updateDraft(key, e.target.value)}
                             className="w-full px-2.5 py-1.5 border border-ink-200 rounded-lg text-sm text-ink-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary-300"
                           >
                             {TBC_DROPDOWN_OPTIONS[key].map((opt) => (
@@ -220,7 +248,7 @@ export default function CreateRfpPage() {
                           value={value}
                           onChange={(e) => {
                             const val = key === 'vendors_invited' ? parseInt(e.target.value) || 0 : e.target.value;
-                            updateField(key, val);
+                            updateDraft(key, val);
                           }}
                           className="w-full px-2.5 py-1.5 border border-ink-200 rounded-lg text-sm text-ink-800 focus:outline-none focus:ring-2 focus:ring-primary-300"
                         />
@@ -242,7 +270,7 @@ export default function CreateRfpPage() {
                 })}
               </div>
               <div className="px-4 py-3 bg-ink-50 border-t border-ink-200 flex items-center gap-3">
-                {editing ? (
+                {isEditing ? (
                   <>
                     <PrimaryButton onClick={saveEdit}>
                       <Save className="w-4 h-4" />
