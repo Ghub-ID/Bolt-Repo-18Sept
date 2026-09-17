@@ -1,0 +1,11 @@
+[functions.analyst-chat]
+verify_jwt = false
+entrypoint = "./functions/analyst-chat/index.ts"
+
+[functions.vendor-extract]
+verify_jwt = false
+entrypoint = "./functions/vendor-extract/index.ts"
+
+[functions.rfcopilot-chat]
+verify_jwt = false
+entrypoint = "./functions/rfcopilot-chat/index.ts"

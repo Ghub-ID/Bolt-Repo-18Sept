@@ -1,0 +1,77 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#EEF0FF',
+          100: '#E0E3FF',
+          200: '#C7CCFF',
+          300: '#A5A8FF',
+          400: '#8B8EFB',
+          500: '#6366F1',
+          600: '#5457E6',
+          700: '#4749C9',
+          800: '#3A3CA8',
+          900: '#2E2F88',
+        },
+        sidebar: '#1E1B3A',
+        sidebarHover: '#28254E',
+        sidebarActive: '#6366F1',
+        surface: '#FFFFFF',
+        appbg: '#F8F9FC',
+        ink: {
+          900: '#111827',
+          800: '#1F2937',
+          700: '#374151',
+          600: '#4B5563',
+          500: '#6B7280',
+          400: '#9CA3AF',
+          300: '#D1D5DB',
+          200: '#E5E7EB',
+          100: '#F3F4F6',
+        },
+        good: {
+          50: '#ECFDF5',
+          100: '#D1FAE5',
+          500: '#10B981',
+          600: '#059669',
+          700: '#047857',
+        },
+        warn: {
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          500: '#F59E0B',
+          600: '#D97706',
+          700: '#B45309',
+        },
+        bad: {
+          50: '#FEF2F2',
+          100: '#FEE2E2',
+          500: '#EF4444',
+          600: '#DC2626',
+          700: '#B91C1C',
+        },
+        info: {
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          500: '#3B82F6',
+          600: '#2563EB',
+          700: '#1D4ED8',
+        },
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)',
+        cardHover: '0 4px 12px rgba(16,24,40,0.08)',
+        modal: '0 10px 40px rgba(17,24,39,0.25)',
+        pop: '0 2px 8px rgba(99,102,241,0.25)',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
+    },
+  },
+  plugins: [],
+};
