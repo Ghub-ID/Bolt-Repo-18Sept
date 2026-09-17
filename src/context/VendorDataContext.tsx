@@ -15,6 +15,7 @@ export interface ExtractedVendor {
   fields: ExtractedField[];
   sourceType: 'csv' | 'pdf' | 'docx' | 'jpg' | 'txt';
   extracted: boolean;
+  extractionError?: string;
 }
 
 export interface Correction {
@@ -276,7 +277,7 @@ const VENDOR_FILE_NAMES: Record<string, string> = {
 async function fetchAndExtract(vendor: typeof VENDOR_FILES[0]): Promise<ExtractedVendor> {
   const fileUrl = `/${vendor.fileName}`;
   const resp = await fetch(fileUrl);
-  if (!resp.ok) throw new Error(`Failed to fetch ${vendor.fileName}`);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: Failed to fetch ${vendor.fileName}`);
   const isText = vendor.fileType === 'csv' || vendor.fileType === 'txt';
 
   let fileContent: string;
@@ -310,7 +311,10 @@ async function fetchAndExtract(vendor: typeof VENDOR_FILES[0]): Promise<Extracte
     }),
   });
 
-  if (!extractResp.ok) throw new Error(`Extraction failed (${extractResp.status})`);
+  if (!extractResp.ok) {
+    const errorBody = await extractResp.text().catch(() => '');
+    throw new Error(`HTTP ${extractResp.status}: ${errorBody || 'Extraction failed'}`);
+  }
   const data = await extractResp.json();
 
   return {
@@ -322,7 +326,7 @@ async function fetchAndExtract(vendor: typeof VENDOR_FILES[0]): Promise<Extracte
   };
 }
 
-function getFallbackVendor(vendor: typeof VENDOR_FILES[0]): ExtractedVendor {
+function getFallbackVendor(vendor: typeof VENDOR_FILES[0], error?: string): ExtractedVendor {
   const fallback = FALLBACK_FIELDS[vendor.vendorId] || [];
   return {
     vendorId: vendor.vendorId,
@@ -330,6 +334,7 @@ function getFallbackVendor(vendor: typeof VENDOR_FILES[0]): ExtractedVendor {
     fields: fallback,
     sourceType: vendor.fileType,
     extracted: fallback.length > 0,
+    extractionError: error,
   };
 }
 
@@ -362,7 +367,12 @@ export function VendorDataProvider({ children }: { children: ReactNode }) {
       if (result.status === 'fulfilled' && result.value.extracted && result.value.fields.length > 0) {
         newVendors[vendor.vendorId] = result.value;
       } else {
-        const fallback = getFallbackVendor(vendor);
+        const errorMsg = result.status === 'rejected'
+          ? `${result.reason instanceof Error ? result.reason.message : String(result.reason)} at ${new Date().toISOString()}`
+          : result.status === 'fulfilled' && !result.value.extracted
+            ? `Extraction returned no fields at ${new Date().toISOString()}`
+            : undefined;
+        const fallback = getFallbackVendor(vendor, errorMsg);
         newVendors[vendor.vendorId] = fallback;
         if (!fallback.extracted) failCount++;
       }
@@ -457,7 +467,7 @@ export function VendorDataProvider({ children }: { children: ReactNode }) {
     };
   }, [vendors, corrections]);
 
-  const anyFailed = Object.values(vendors).every((v) => !v.extracted) && Object.keys(vendors).length > 0;
+  const anyFailed = Object.values(vendors).some((v) => !v.extracted) && Object.keys(vendors).length > 0;
 
   return (
     <VendorDataContext.Provider value={{

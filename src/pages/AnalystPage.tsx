@@ -37,29 +37,23 @@ export default function AnalystPage() {
     setError(null);
 
     try {
-      // Build vendor data JSON from context for injection
-      const vendorDataJson = JSON.stringify(
-        Object.values(vendors).map((v) => ({
-          vendorId: v.vendorId,
-          vendorName: v.vendorName,
-          extracted: v.extracted,
-          sourceType: v.sourceType,
-          fields: v.fields.map((f) => ({
-            field: f.field_name,
-            value: f.value,
-            confidence: f.confidence,
-            source: f.source_location,
-          })),
-        }))
-      );
+      const vendorDataPayload = Object.values(vendors).map((v) => ({
+        vendorId: v.vendorId,
+        vendorName: v.vendorName,
+        extracted: v.extracted,
+        sourceType: v.sourceType,
+        fields: v.fields.map((f) => ({
+          field: f.field_name,
+          value: f.value,
+          confidence: f.confidence,
+          source: f.source_location,
+        })),
+      }));
 
-      // Inject vendor data as a system context prefix in the first user message
-      const messagesForApi = newMessages.map((msg, i) => {
-        if (i === 0 && msg.role === 'user') {
-          return { ...msg, text: `[EXTRACTED VENDOR DATA JSON]\n${vendorDataJson}\n\n[USER QUESTION]\n${msg.text}` };
-        }
-        return msg;
-      });
+      const conversationHistory = newMessages.map((msg) => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        text: msg.text,
+      }));
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyst-chat`;
       const response = await fetch(apiUrl, {
@@ -68,7 +62,10 @@ export default function AnalystPage() {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: messagesForApi }),
+        body: JSON.stringify({
+          messages: conversationHistory,
+          vendorData: vendorDataPayload,
+        }),
       });
 
       if (!response.ok) {
@@ -101,6 +98,9 @@ export default function AnalystPage() {
     }
   };
 
+  const vendorList = Object.values(vendors);
+  const hasNoVendorData = vendorList.length === 0 || vendorList.every((v) => !v.extracted);
+
   return (
     <div className="flex flex-col h-screen max-h-screen">
       {/* Header */}
@@ -120,6 +120,12 @@ export default function AnalystPage() {
           {loading ? 'Thinking…' : 'Online'}
         </span>
       </div>
+
+      {hasNoVendorData && !dataLoading && (
+        <div className="px-6 py-2.5 bg-warn-50 border-b border-warn-100">
+          <p className="text-xs text-warn-700 text-center">Vendor data is loading. Questions may return incomplete answers until extraction completes.</p>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Chat */}

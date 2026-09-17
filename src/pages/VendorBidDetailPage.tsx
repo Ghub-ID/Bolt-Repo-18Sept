@@ -73,8 +73,9 @@ export default function VendorBidDetailPage() {
   const navigate = useNavigate();
   const { vendors, loading, corrections, applyCorrection, getVendorFields } = useVendorData();
 
-  const vendor = rfp052Vendors.find((v) => v.id === vendorId) || rfp052Vendors[0];
-  const extractedVendor = vendors[vendor.id];
+  const extractedVendor = vendors[vendorId || ''];
+  const useExtracted = extractedVendor && extractedVendor.extracted;
+  const vendor = (!useExtracted ? rfp052Vendors.find((v) => v.id === vendorId) : null) || rfp052Vendors.find((v) => v.id === vendorId) || rfp052Vendors[0];
   const extractedFields = getVendorFields(vendor.id);
   const vendorCorrections = corrections[vendor.id] || [];
 

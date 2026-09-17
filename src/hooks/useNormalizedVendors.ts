@@ -14,6 +14,7 @@ export interface NormalizedVendor {
   confidenceTone: 'good' | 'warn' | 'bad' | 'neutral';
   fields: ExtractedField[];
   extracted: boolean;
+  extractionError?: string;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -103,6 +104,7 @@ export function useNormalizedVendors(): NormalizedVendor[] {
       confidenceTone,
       fields,
       extracted: v.extracted,
+      extractionError: v.extractionError,
     };
   });
 }

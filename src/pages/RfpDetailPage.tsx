@@ -1,6 +1,6 @@
 import { useState, Fragment, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, AlertTriangle, GitBranch, ClipboardCheck, Bell, Download, Share2, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, GitBranch, ClipboardCheck, Bell, Download, Share2, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { rfp052Vendors, charterFieldsForVendor, charterGroupNames, type VendorRow } from '@/data/freightData';
 import { useVendorData, VENDOR_FILE_NAMES } from '@/context/VendorDataContext';
@@ -15,6 +15,20 @@ const toneText: Record<string, string> = {
   bad: 'text-bad-600',
   neutral: 'text-ink-600',
 };
+
+function parseInrRate(value: string): number | null {
+  if (!value || value === 'NOT_FOUND') return null;
+  const inrMatch = value.match(/₹\s*([\d,]+)/);
+  if (inrMatch) return parseFloat(inrMatch[1].replace(/,/g, ''));
+  return null;
+}
+
+function getBenchmarkLabel(rate: number, avg: number): { label: string; tone: 'good' | 'warn' | 'bad' | 'neutral' } {
+  const diff = (rate - avg) / avg;
+  if (diff <= -0.05) return { label: 'Below avg', tone: 'good' };
+  if (diff >= 0.05) return { label: 'Above avg', tone: 'warn' };
+  return { label: 'In line', tone: 'good' };
+}
 
 function QuestionnaireBadge({ score, label, onClick }: { score: 'full' | 'partial' | 'fail'; label: string; onClick: () => void }) {
   const map = {
@@ -36,6 +50,17 @@ export default function RfpDetailPage() {
   const { charter, tbcCount } = useRfpCharter();
   const normalizedVendors = useNormalizedVendors();
   const counts = useVendorCount();
+
+  const extractedRates = normalizedVendors
+    .filter((v) => v.extracted)
+    .map((v) => {
+      const totalField = v.fields.find((f) => f.field_name === 'Total Rate/Ton');
+      return parseInrRate(totalField?.value || '');
+    })
+    .filter((r): r is number => r !== null);
+
+  const showBenchmark = extractedRates.length >= 4;
+  const avgRate = showBenchmark ? extractedRates.reduce((a, b) => a + b, 0) / extractedRates.length : 0;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [modal, setModal] = useState<{ type: string; vendor?: VendorRow } | null>(null);
   const [tbcOpen, setTbcOpen] = useState(false);
@@ -57,6 +82,12 @@ export default function RfpDetailPage() {
   const toggleExpand = useCallback((vendorId: string) => {
     setExpanded((prev) => (prev === vendorId ? null : vendorId));
   }, []);
+
+  const handleReextract = () => {
+    sessionStorage.removeItem('freightiq_vendor_extractions');
+    sessionStorage.removeItem('freightiq_corrections');
+    retry();
+  };
 
   const handleExport = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -189,6 +220,19 @@ export default function RfpDetailPage() {
         </div>
       )}
 
+      {/* Extraction status banner */}
+      {!loading && counts.total > 0 && (
+        <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-ink-50 border border-ink-200">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${counts.failed === 0 ? 'bg-good-500' : 'bg-warn-500'}`} />
+          <span className="text-sm text-ink-700">
+            AI Extraction: {counts.extracted}/{counts.total} vendors extracted successfully | {counts.failed} using fallback data
+          </span>
+          <button onClick={handleReextract} className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-ink-200 text-ink-700 text-sm font-semibold rounded-lg hover:bg-ink-50 transition shrink-0">
+            <RefreshCw className="w-3.5 h-3.5" /> Re-extract All
+          </button>
+        </div>
+      )}
+
       {/* Secondary action row */}
       <div className="mb-4 flex items-center gap-2.5">
         <OutlineButton tone="primary" onClick={() => setScenarioOpen(true)}>
@@ -226,11 +270,47 @@ export default function RfpDetailPage() {
                 const staticVendor = rfp052Vendors.find((sv) => sv.id === v.vendorId);
                 const questionnaire = staticVendor?.questionnaire || '—';
                 const questionnaireScore = staticVendor?.questionnaireScore || 'fail';
-                const benchmark = staticVendor?.benchmark || '—';
-                const benchmarkTone = staticVendor?.benchmarkTone || 'neutral';
-                const issues = staticVendor?.issues || '—';
-                const issuesTone = staticVendor?.issuesTone || 'neutral';
                 const badge = staticVendor?.badge;
+
+                let benchmark: string;
+                let benchmarkTone: 'good' | 'warn' | 'bad' | 'neutral';
+                if (v.extracted && showBenchmark) {
+                  const totalField = v.fields.find((f) => f.field_name === 'Total Rate/Ton');
+                  const rateNum = parseInrRate(totalField?.value || '');
+                  if (rateNum !== null) {
+                    const bm = getBenchmarkLabel(rateNum, avgRate);
+                    benchmark = bm.label;
+                    benchmarkTone = bm.tone;
+                  } else {
+                    benchmark = '—';
+                    benchmarkTone = 'neutral';
+                  }
+                } else if (v.extracted && !showBenchmark) {
+                  benchmark = 'Insufficient data';
+                  benchmarkTone = 'neutral';
+                } else {
+                  benchmark = staticVendor?.benchmark || '—';
+                  benchmarkTone = staticVendor?.benchmarkTone || 'neutral';
+                }
+
+                let issues: string;
+                let issuesTone: 'good' | 'warn' | 'bad' | 'neutral';
+                if (v.extracted) {
+                  const lowConfCount = v.fields.filter((f) => f.confidence < 0.7).length;
+                  if (lowConfCount === 0) {
+                    issues = '—';
+                    issuesTone = 'good';
+                  } else if (lowConfCount <= 2) {
+                    issues = `${lowConfCount} issue${lowConfCount > 1 ? 's' : ''}`;
+                    issuesTone = 'warn';
+                  } else {
+                    issues = `${lowConfCount} issues`;
+                    issuesTone = 'bad';
+                  }
+                } else {
+                  issues = staticVendor?.issues || '—';
+                  issuesTone = staticVendor?.issuesTone || 'neutral';
+                }
                 const rateDisplay = v.rate === 'NOT_FOUND' ? 'Pending' : v.rate;
                 const isExpanded = expanded === v.vendorId;
 
@@ -249,7 +329,14 @@ export default function RfpDetailPage() {
                         </button>
                       </td>
                       <td className="px-3 py-3">
-                        <div className="font-semibold text-ink-800">{v.vendorName.split(' ')[0]}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-ink-800">{v.vendorName.split(' ')[0]}</span>
+                          {v.extracted ? (
+                            <span title="AI extracted" className="text-xs">🤖</span>
+                          ) : (
+                            <span title={v.extractionError || 'No extraction attempted.'} className="text-xs cursor-help">📋</span>
+                          )}
+                        </div>
                         {badge && <div className="text-xs text-ink-400">{badge}</div>}
                       </td>
                       <td className={`px-3 py-3 ${toneText[v.rateTone]}`}>
@@ -316,7 +403,10 @@ export default function RfpDetailPage() {
                 <tr key={v.id} className="hover:bg-ink-50/50 transition opacity-75">
                   <td className="px-3 py-3"></td>
                   <td className="px-3 py-3">
-                    <div className="font-semibold text-ink-800">{v.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-ink-800">{v.name}</span>
+                      <span title="No extraction attempted." className="text-xs cursor-help">📋</span>
+                    </div>
                     {v.badge && <div className="text-xs text-ink-400">{v.badge}</div>}
                   </td>
                   <td className={`px-3 py-3 ${toneText[v.rateTone]}`}><span className="font-medium">{v.rate}</span></td>
