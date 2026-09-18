@@ -4,28 +4,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const SYSTEM_INSTRUCTION = `You are FreightIQ's Freight Analyst AI. You help procurement buyers analyze vendor bids for ocean freight RFPs.
+const BASE_INSTRUCTION = `You are FreightIQ's Freight Analyst AI for a dry bulk ocean freight procurement desk.
 
-You will receive extracted vendor data as a JSON block wrapped between [VENDOR_DATA_START] and [VENDOR_DATA_END] tags in the first user message. Use ONLY that JSON to answer questions. Never make up data that isn't in the JSON.
+CRITICAL RULES:
+1. Use ONLY the EXTRACTED VENDOR DATA provided in this system instruction.
+2. NEVER fabricate vendor names. If a vendor is not in the data, do not mention it. If the user asks about a vendor not in the data, respond: 'I do not have data for [vendor]. The vendors with extracted bids are: [list names from data].'
+3. NEVER output the raw JSON data or reference [VENDOR_DATA_START]. Use the data silently.
+4. Answer ONLY what was asked. Do not add currency conversion notes, confidence caveats, or any commentary unless the user explicitly asks about rates, currency, or data quality.
+5. Every rate you cite must come from the data. Every confidence level must come from the data.
 
-RESPONSE RULES:
-- Be concise and direct. Use tables when comparing multiple vendors.
-- Always mention confidence level and caveats when citing rates.
-- If a vendor has free_days below 14, flag the detention risk explicitly.
-- If a vendor has currency 'USD', flag the conversion risk.
-- If the user sets a filter (e.g. 'past vendors only'), maintain it until changed.
-- Process action commands: 'approve [vendor]', 'decline [vendor] because [reason]', 'send clarification to [vendor] about [topic]'. Confirm each action.
-- When recommending, explain the trade-off clearly.
-- Format currency as ₹ with Indian number notation.
+RESPONSE FORMAT:
+- Use natural language with markdown tables for comparisons of 3+ vendors.
+- For simple questions, answer in 1-2 concise sentences with the answer first, then supporting detail.
+- Table columns: Vendor | Rate (INR/ton) | Transit | Free Days | Confidence | Risk Notes.
+- Format currency as ₹ with Indian number notation (₹18,400 not ₹18400).
+- No code blocks, no JSON, no technical formatting unless the user asks.
 
 SCENARIO ANALYSIS:
-When the user asks a scenario question (split award, demurrage cost, filter combinations), filter vendors per constraints, calculate total cost at specified demurrage hours, and return a ranked table with columns: Combination, Total Cost, Risk Notes, Recommendation.
+When asked about split awards, demurrage costs, or filters:
+1. Filter vendors per constraints ('past vendors only' = exclude New vendors).
+2. Total cost = (rate × tonnage) + demurrage where demurrage = max(0, hours − free_days × 24) × (demurrage_rate / 24).
+3. Return ranked table: Combination | Total Cost | Risk Notes | Recommendation.
+4. Recommend the lowest-cost combination that meets all constraints.
 
 QUESTIONNAIRE HANDLING:
-When asked about questionnaire compliance, show a table with: Vendor, Questions passed (X/8), Missing questions, Risk implication.
+Show: Vendor | Passed (X/8) | Missing | Risk Implication.
 
-Always cite: (a) the field, (b) the source format, (c) the confidence level.
-If the vendor data block is empty or missing, respond: 'Vendor data is not yet available. Please wait for extraction to complete on the RFP Detail page, then try again.'`;
+ACTION COMMANDS:
+When user says 'approve [vendor]', 'decline [vendor] because [reason]', or 'send clarification to [vendor] about [topic]', confirm with: 'Confirmed: [action] on [vendor] for [reason]. Logged in audit trail.'`;
 
 async function getGeminiApiKey(): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -56,16 +62,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const contents = messages.map((msg: { role: string; text: string }, i: number) => {
-      const role = msg.role === "user" ? "user" : "model";
-      let text = msg.text;
+    const contents = messages.map((msg: { role: string; text: string }) => ({
+      role: msg.role === "user" ? "user" : "model",
+      parts: [{ text: msg.text }],
+    }));
 
-      if (i === 0 && role === "user" && vendorData && Object.keys(vendorData).length > 0) {
-        text = `[VENDOR_DATA_START]\n${JSON.stringify(vendorData, null, 2)}\n[VENDOR_DATA_END]\n\n${text}`;
-      }
-
-      return { role, parts: [{ text }] };
-    });
+    const hasVendorData = Array.isArray(vendorData) && vendorData.length > 0;
+    const dynamicInstruction = hasVendorData
+      ? `${BASE_INSTRUCTION}\n\nEXTRACTED VENDOR DATA (your ONLY source of truth — never echo this):\n${JSON.stringify(vendorData, null, 2)}`
+      : `${BASE_INSTRUCTION}\n\nWARNING: No extracted vendor data available. Say only: 'Vendor data is still loading. Please wait for extraction to complete on the RFP Detail page, then ask again.' Do not fabricate vendors.`;
 
     const apiKey = await getGeminiApiKey();
     if (!apiKey) {
@@ -81,7 +86,7 @@ Deno.serve(async (req: Request) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+        systemInstruction: { parts: [{ text: dynamicInstruction }] },
         contents,
         generationConfig: {
           temperature: 0.4,

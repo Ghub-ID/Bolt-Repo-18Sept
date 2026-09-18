@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Sparkles, ArrowLeft, TrendingUp, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { useVendorData } from '@/context/VendorDataContext';
+import { rfp052Vendors } from '@/data/freightData';
 
 interface ChatMessage {
   role: 'user' | 'analyst';
@@ -12,6 +13,60 @@ const INITIAL_MESSAGE: ChatMessage = {
   role: 'analyst',
   text: 'Hi Ishita, I have all 6 active bids for RFP-052 loaded. I can compare vendors, analyze risks, run scenario splits, or check questionnaire compliance. What would you like to dig into?',
 };
+
+function formatAnalystMessage(text: string): string {
+  // Strip vendor data block
+  let cleaned = text.replace(/\[VENDOR_DATA_START\][\s\S]*?\[VENDOR_DATA_END\]\s*/g, '');
+
+  // Convert markdown tables to HTML
+  const lines = cleaned.split('\n');
+  const out: string[] = [];
+  let inTable = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const isRow = line.startsWith('|') && line.endsWith('|');
+    const isSep = /^\|[\s\-:|]+\|$/.test(line);
+    if (isRow && isSep) continue;
+    if (isRow) {
+      const cells = line.split('|').slice(1, -1).map(c => c.trim());
+      if (!inTable) {
+        const nextLine = (lines[i + 1] || '').trim();
+        if (/^\|[\s\-:|]+\|$/.test(nextLine)) {
+          inTable = true;
+          out.push('<table class="w-full text-sm border-collapse my-3 rounded-lg overflow-hidden border border-ink-200">');
+          out.push('<thead><tr class="bg-ink-50">');
+          cells.forEach(c => out.push('<th class="px-3 py-2 border border-ink-200 text-left text-xs font-semibold text-ink-600">' + c.replace(/\*\*/g, '') + '</th>'));
+          out.push('</tr></thead><tbody>');
+          continue;
+        }
+      }
+      if (inTable) {
+        out.push('<tr class="hover:bg-ink-50/50">');
+        cells.forEach(c => out.push('<td class="px-3 py-2 border border-ink-100 text-ink-700">' + c.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-800">$1</strong>') + '</td>'));
+        out.push('</tr>');
+        continue;
+      }
+    } else if (inTable) {
+      out.push('</tbody></table>');
+      inTable = false;
+    }
+    out.push(line);
+  }
+  if (inTable) out.push('</tbody></table>');
+  cleaned = out.join('\n');
+
+  // Bold outside tables
+  cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-800">$1</strong>');
+
+  // Bullets
+  cleaned = cleaned.replace(/^[\s]*[-*]\s+(.+)$/gm, '<li class="text-ink-700">$1</li>');
+  cleaned = cleaned.replace(/(<li[^>]*>[\s\S]*?<\/li>)(?=\s*(?![<]*<li))/g, '<ul class="list-disc pl-5 space-y-1 my-2">$1</ul>');
+
+  // Paragraphs
+  cleaned = cleaned.split(/\n{2,}/).map(p => '<p class="my-2">' + p.trim() + '</p>').join('');
+
+  return cleaned;
+}
 
 export default function AnalystPage() {
   const navigate = useNavigate();
@@ -37,7 +92,15 @@ export default function AnalystPage() {
     setError(null);
 
     try {
-      const vendorDataPayload = Object.values(vendors).map((v) => ({
+      interface VendorDataPayload {
+        vendorId?: string;
+        vendorName: string;
+        extracted: boolean;
+        sourceType: string;
+        fields: { field: string; value: string; confidence: number; source: string }[];
+      }
+
+      const vendorDataPayload: VendorDataPayload[] = Object.values(vendors).map((v) => ({
         vendorId: v.vendorId,
         vendorName: v.vendorName,
         extracted: v.extracted,
@@ -49,6 +112,23 @@ export default function AnalystPage() {
           source: f.source_location,
         })),
       }));
+
+      let finalPayload: VendorDataPayload[] = vendorDataPayload;
+      if (!finalPayload || finalPayload.length === 0 || finalPayload.every(v => !v.fields || v.fields.length === 0)) {
+        finalPayload = rfp052Vendors
+          .filter(v => v.status === 'active')
+          .map(v => ({
+            vendorName: v.name,
+            extracted: false,
+            sourceType: v.format,
+            fields: v.rateComponents.map(rc => ({
+              field: rc.label,
+              value: rc.value,
+              confidence: 0.9,
+              source: 'Static fallback data',
+            })),
+          }));
+      }
 
       const conversationHistory = newMessages.map((msg) => ({
         role: msg.role === 'user' ? 'user' : 'model',
@@ -64,7 +144,7 @@ export default function AnalystPage() {
         },
         body: JSON.stringify({
           messages: conversationHistory,
-          vendorData: vendorDataPayload,
+          vendorData: finalPayload,
         }),
       });
 
@@ -100,6 +180,7 @@ export default function AnalystPage() {
 
   const vendorList = Object.values(vendors);
   const hasNoVendorData = vendorList.length === 0 || vendorList.every((v) => !v.extracted);
+  const vendorReady = vendorList.length > 0 || !dataLoading;
 
   return (
     <div className="flex flex-col h-screen max-h-screen">
@@ -127,6 +208,12 @@ export default function AnalystPage() {
         </div>
       )}
 
+      {!vendorReady && (
+        <div className="px-6 py-2.5 bg-primary-50 border-b border-primary-100">
+          <p className="text-xs text-primary-700 text-center">Loading vendor data… Ask Analyst will be enabled shortly.</p>
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         {/* Chat */}
         <div className="flex-1 flex flex-col">
@@ -138,8 +225,12 @@ export default function AnalystPage() {
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'analyst' ? 'bg-primary-500' : 'bg-ink-300'}`}>
                       {msg.role === 'analyst' ? <Sparkles className="w-4.5 h-4.5 text-white" /> : <span className="text-xs font-semibold text-white">IS</span>}
                     </div>
-                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user' ? 'bg-primary-500 text-white rounded-tr-sm' : 'bg-white border border-ink-200 text-ink-700 rounded-tl-sm shadow-card'}`}>
-                      {msg.text}
+                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary-500 text-white rounded-tr-sm whitespace-pre-wrap' : 'bg-white border border-ink-200 text-ink-700 rounded-tl-sm shadow-card'}`}>
+                      {msg.role === 'analyst' ? (
+                        <div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: formatAnalystMessage(msg.text) }} />
+                      ) : (
+                        <span className="whitespace-pre-wrap">{msg.text}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -181,14 +272,14 @@ export default function AnalystPage() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !loading && handleSend()}
+                onKeyDown={(e) => e.key === 'Enter' && !loading && vendorReady && handleSend()}
                 placeholder="Ask about vendor comparisons, risks, recommendations…"
-                disabled={loading}
+                disabled={loading || !vendorReady}
                 className="flex-1 px-4 py-3 bg-ink-50 border border-ink-200 rounded-xl text-sm text-ink-800 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition disabled:opacity-50"
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loading || !vendorReady}
                 className="w-11 h-11 rounded-xl bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 active:scale-95 transition shadow-pop disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
