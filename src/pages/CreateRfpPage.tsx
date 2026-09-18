@@ -30,13 +30,6 @@ function parseOptions(text: string): { question: string; options: string[] } | n
   return { question: qMatch[1].trim(), options };
 }
 
-function stripQuestionOptions(text: string): string {
-  return text
-    .replace(/QUESTION:\s*.+/i, '')
-    .replace(/OPTIONS:\s*.+/i, '')
-    .trim();
-}
-
 function parseRfpJson(text: string): RfpCharter | null {
   const match = text.match(/<RFP_JSON>\s*([\s\S]*?)\s*<\/RFP_JSON>/i);
   if (!match) return null;
@@ -218,9 +211,8 @@ export default function CreateRfpPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin px-6 py-6 space-y-4">
         <div className="max-w-3xl mx-auto space-y-4">
           {messages.map((msg, i) => {
-            const isLatestAi = msg.role === 'ai' && i === messages.length - 1;
-            const parsed = isLatestAi ? parseOptions(msg.text) : null;
-            const displayText = parsed ? stripQuestionOptions(msg.text) : msg.text;
+            const parsed = msg.role === 'ai' ? parseOptions(msg.text) : null;
+            const displayText = parsed ? parsed.question : msg.text;
             return (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
