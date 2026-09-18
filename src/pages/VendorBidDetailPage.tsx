@@ -57,7 +57,7 @@ const aiRemarks: Record<string, string> = {
 
 const issues: Record<string, { title: string; author: string; text: string; time: string; replies?: { author: string; text: string; time: string }[] }[]> = {
   'gulf-freight': [
-    { title: 'USD currency conversion', author: 'FreightIQ AI', text: 'Rate is quoted in USD. Conversion to INR adds FX risk.', time: '2h ago', replies: [{ author: 'Ishita S.', text: 'Agreed, let us ask them for an INR all-in rate.', time: '1h ago' }] },
+    { title: 'USD currency conversion', author: 'FreightIQ AI', text: 'Rate is quoted in USD. Conversion to INR adds FX risk.', time: '2h ago', replies: [{ author: 'Neel Rao', text: 'Agreed, let us ask them for an INR all-in rate.', time: '1h ago' }] },
     { title: 'Demurrage in footnote', author: 'FreightIQ AI', text: 'Demurrage rate may be in a PDF footnote. Needs manual verification.', time: '3h ago' },
   ],
   'indoship': [{ title: 'All-in rate ambiguity', author: 'FreightIQ AI', text: 'Rate is quoted as all-in with no BAF/THC breakdown.', time: '4h ago' }],
@@ -234,7 +234,7 @@ export default function VendorBidDetailPage() {
                 <div className="px-4 py-3 space-y-3">
                   <div className="flex items-start gap-2.5">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${issue.author === 'FreightIQ AI' ? 'bg-primary-100 text-primary-700' : 'bg-ink-200 text-ink-600'}`}>
-                      {issue.author === 'FreightIQ AI' ? 'AI' : 'IS'}
+                      {issue.author === 'FreightIQ AI' ? 'AI' : 'NR'}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs text-ink-400 mb-0.5">{issue.author}</div>
@@ -243,7 +243,7 @@ export default function VendorBidDetailPage() {
                   </div>
                   {issue.replies?.map((reply, ri) => (
                     <div key={ri} className="flex items-start gap-2.5 pl-6">
-                      <div className="w-7 h-7 rounded-full bg-ink-200 text-ink-600 flex items-center justify-center text-xs font-semibold shrink-0">IS</div>
+                      <div className="w-7 h-7 rounded-full bg-ink-200 text-ink-600 flex items-center justify-center text-xs font-semibold shrink-0">NR</div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs text-ink-400 mb-0.5">{reply.author}</div>
                         <p className="text-sm text-ink-700">{reply.text}</p>
@@ -252,7 +252,7 @@ export default function VendorBidDetailPage() {
                   ))}
                   {(issueThreads[issue.title] || []).map((reply, ri) => (
                     <div key={ri} className="flex items-start gap-2.5 pl-6">
-                      <div className="w-7 h-7 rounded-full bg-ink-200 text-ink-600 flex items-center justify-center text-xs font-semibold shrink-0">IS</div>
+                      <div className="w-7 h-7 rounded-full bg-ink-200 text-ink-600 flex items-center justify-center text-xs font-semibold shrink-0">NR</div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs text-ink-400 mb-0.5">{reply.author}</div>
                         <p className="text-sm text-ink-700">{reply.text}</p>
@@ -261,9 +261,9 @@ export default function VendorBidDetailPage() {
                   ))}
                   <div className="flex items-center gap-2 pl-6">
                     <input type="text" value={issueInput} onChange={(e) => setIssueInput(e.target.value)} placeholder="Reply…" className="flex-1 px-3 py-2 text-sm border border-ink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300"
-                      onKeyDown={(e) => { if (e.key === 'Enter' && issueInput.trim()) { setIssueThreads((prev) => ({ ...prev, [issue.title]: [...(prev[issue.title] || []), { author: 'Ishita S.', text: issueInput.trim(), time: 'just now' }] })); setIssueInput(''); } }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && issueInput.trim()) { setIssueThreads((prev) => ({ ...prev, [issue.title]: [...(prev[issue.title] || []), { author: 'Neel Rao', text: issueInput.trim(), time: 'just now' }] })); setIssueInput(''); } }}
                     />
-                    <button onClick={() => { if (issueInput.trim()) { setIssueThreads((prev) => ({ ...prev, [issue.title]: [...(prev[issue.title] || []), { author: 'Ishita S.', text: issueInput.trim(), time: 'just now' }] })); setIssueInput(''); } }}
+                    <button onClick={() => { if (issueInput.trim()) { setIssueThreads((prev) => ({ ...prev, [issue.title]: [...(prev[issue.title] || []), { author: 'Neel Rao', text: issueInput.trim(), time: 'just now' }] })); setIssueInput(''); } }}
                       className="w-8 h-8 rounded-lg bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition">
                       <Send className="w-4 h-4" />
                     </button>

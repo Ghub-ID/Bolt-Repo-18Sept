@@ -60,7 +60,7 @@ export default function HomePage() {
                 onClick={() => navigate(action.path)}
                 className="w-full h-auto min-h-[52px] px-4 py-3 rounded-xl bg-white border border-ink-200 text-sm font-medium text-ink-700 hover:border-primary-400 hover:shadow-card transition active:scale-95 flex items-center justify-center gap-2 text-center whitespace-normal leading-snug"
               >
-                <Icon className="w-4 h-4 text-primary-500" />
+                <Icon className="w-5 h-5 flex-shrink-0 text-primary-500" />
                 {action.label}
               </button>
             );

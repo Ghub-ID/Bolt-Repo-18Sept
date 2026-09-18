@@ -12,7 +12,7 @@ interface ChatMessage {
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: 'analyst',
-  text: 'Hi Ishita, I have all 6 active bids for RFP-052 loaded. I can compare vendors, analyze risks, run scenario splits, or check questionnaire compliance. What would you like to dig into?',
+  text: 'Hi Neel Rao, I have all 6 active bids for RFP-052 loaded. I can compare vendors, analyze risks, run scenario splits, or check questionnaire compliance. What would you like to dig into?',
 };
 
 function formatAnalystMessage(text: string): string {
@@ -225,7 +225,7 @@ export default function AnalystPage() {
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}>
                   <div className={`flex gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'analyst' ? 'bg-primary-500' : 'bg-ink-300'}`}>
-                      {msg.role === 'analyst' ? <Sparkles className="w-4.5 h-4.5 text-white" /> : <span className="text-xs font-semibold text-white">IS</span>}
+                      {msg.role === 'analyst' ? <Sparkles className="w-4.5 h-4.5 text-white" /> : <span className="text-xs font-semibold text-white">NR</span>}
                     </div>
                     <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary-500 text-white rounded-tr-sm whitespace-pre-wrap' : 'bg-white border border-ink-200 text-ink-700 rounded-tl-sm shadow-card'}`}>
                       {msg.role === 'analyst' ? (

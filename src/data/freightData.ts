@@ -508,7 +508,7 @@ export const activities: ActivityItem[] = [
 ];
 
 export const analystChatSeed = [
-  { role: 'analyst' as const, text: 'Hi Ishita, I have all 6 active bids for RFP-052 loaded. What would you like to dig into?' },
+  { role: 'analyst' as const, text: 'Hi Neel Rao, I have all 6 active bids for RFP-052 loaded. What would you like to dig into?' },
   { role: 'user' as const, text: 'Which vendor offers the best value considering rate and transit?' },
   { role: 'analyst' as const, text: 'OceanLink is the best value pick — ₹18,400/ton, 22-25 day transit, 14 free days, full 8/8 questionnaire, and in line with their past rate of ₹18,100 and the market range of ₹17.8-19.2K. SwiftSea is cheapest at ₹15,600 but carries high extraction risk (photo OCR) and only 7 free days, which is below your 14-day requirement.' },
   { role: 'user' as const, text: 'What are the risks with Gulf Freight?' },
