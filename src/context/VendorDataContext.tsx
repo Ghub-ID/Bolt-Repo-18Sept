@@ -43,7 +43,6 @@ const VENDOR_FILES = [
   { vendorId: 'gulf-freight', vendorName: 'Gulf Freight Corp', fileName: 'Gulf_Freight_Quote_RFP052.pdf', fileType: 'pdf' as const },
   { vendorId: 'indoship', vendorName: 'IndoShip NVOCC', fileName: 'IndoShip_Quote_RFP052.docx', fileType: 'docx' as const },
   { vendorId: 'swiftsea', vendorName: 'SwiftSea Shipping', fileName: 'SwiftSea_RateCard.jpg', fileType: 'jpg' as const },
-  { vendorId: 'transocean', vendorName: 'TransOcean Shipping', fileName: 'TransOcean_Email_RFP052.txt', fileType: 'txt' as const },
   { vendorId: 'maersk', vendorName: 'Maersk Line Direct', fileName: 'Maersk_Quote_RFP052.csv', fileType: 'csv' as const },
   { vendorId: 'nordic-freight', vendorName: 'Nordic Freight', fileName: 'NordicFreight_Quote_RFP052.csv', fileType: 'csv' as const },
 ];
@@ -269,7 +268,6 @@ const VENDOR_FILE_NAMES: Record<string, string> = {
   'gulf-freight': 'Gulf_Freight_Quote_RFP052.pdf',
   'indoship': 'IndoShip_Quote_RFP052.docx',
   'swiftsea': 'SwiftSea_RateCard.jpg',
-  'transocean': 'TransOcean_Email_RFP052.txt',
   'maersk': 'Maersk_Quote_RFP052.csv',
   'nordic-freight': 'NordicFreight_Quote_RFP052.csv',
 };

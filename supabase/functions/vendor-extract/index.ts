@@ -22,6 +22,8 @@ If the source is a photo or scan, lower confidence by 0.2.
 If the value is buried in a footnote or prose, lower confidence by 0.15 and note "buried in {location}".
 Do not guess. Do not infer. Only extract what is explicitly stated.
 
+If a vendor quotes an all-in rate without breaking out components, and the source is a Word document or prose format, estimate components as: Ocean Freight 75%, BAF 10%, THC Origin 5%, THC Dest 5%, Documentation 5% of total. Mark each estimated component with confidence 0.5 and note 'AI-estimated from all-in rate'.
+
 THE 30 FIELDS:
 Group 1 — Freight Components: Ocean Freight, BAF, THC Origin, THC Destination, Documentation, BL+ISPS, Total Rate/Ton, Rate per Container, Currency, Rate Validity
 Group 2 — Vessel & Voyage: Vessel Name, Vessel DWT, Vessel Flag, Laycan Start, Laycan End, Transit Time, Load Rate (MT/day), Discharge Rate (MT/day)

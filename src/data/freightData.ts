@@ -264,7 +264,7 @@ export const rfp052Vendors: VendorRow[] = [
     benchmarkTone: 'neutral',
     issues: '2d overdue',
     issuesTone: 'bad',
-    status: 'remind',
+    status: 'pending',
     rateComponents: [],
   },
   {

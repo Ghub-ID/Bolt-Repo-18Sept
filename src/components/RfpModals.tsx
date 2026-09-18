@@ -320,7 +320,6 @@ export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () =>
   const [passedOnly, setPassedOnly] = useState(false);
   const [pastOnly, setPastOnly] = useState(false);
   const [demurrage, setDemurrage] = useState(24);
-  const [hasRun, setHasRun] = useState(false);
 
   const vendorData = buildVendorScenarioData(vendors);
 
@@ -373,7 +372,7 @@ export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () =>
           <label className="block text-sm font-medium text-ink-700 mb-2">Number of vendors to split award across</label>
           <select
             value={splitCount}
-            onChange={(e) => { setSplitCount(Number(e.target.value)); setHasRun(false); }}
+            onChange={(e) => { setSplitCount(Number(e.target.value)); }}
             className="w-full px-3.5 py-2.5 border border-ink-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
           >
             <option value={1}>1 (single award)</option>
@@ -382,11 +381,11 @@ export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () =>
           </select>
         </div>
         <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" checked={passedOnly} onChange={(e) => { setPassedOnly(e.target.checked); setHasRun(false); }} className="accent-primary-500 w-4 h-4" />
+          <input type="checkbox" checked={passedOnly} onChange={(e) => { setPassedOnly(e.target.checked); }} className="accent-primary-500 w-4 h-4" />
           <span className="text-sm text-ink-700">Only include vendors who passed the full questionnaire (8/8)</span>
         </label>
         <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" checked={pastOnly} onChange={(e) => { setPastOnly(e.target.checked); setHasRun(false); }} className="accent-primary-500 w-4 h-4" />
+          <input type="checkbox" checked={pastOnly} onChange={(e) => { setPastOnly(e.target.checked); }} className="accent-primary-500 w-4 h-4" />
           <span className="text-sm text-ink-700">Only include past vendors</span>
         </label>
         <div>
@@ -394,16 +393,11 @@ export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () =>
             <label className="text-sm font-medium text-ink-700">Demurrage hours at discharge (0–72)</label>
             <span className="px-2.5 py-0.5 rounded-md bg-primary-100 text-primary-700 text-sm font-bold tabular-nums">{demurrage}h</span>
           </div>
-          <input type="range" min={0} max={72} value={demurrage} onChange={(e) => { setDemurrage(Number(e.target.value)); setHasRun(false); }} className="w-full" />
+          <input type="range" min={0} max={72} value={demurrage} onChange={(e) => { setDemurrage(Number(e.target.value)); }} className="w-full" />
         </div>
-        <button onClick={() => setHasRun(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white text-sm font-semibold rounded-lg hover:bg-primary-600 transition shadow-pop">
-          Run Analysis
-        </button>
         <div className="border-t border-ink-200 pt-4 min-h-[80px]">
-          {!hasRun ? (
-            <p className="text-sm text-ink-400 text-center py-8">Run the analysis to see ranked results.</p>
-          ) : topResults.length === 0 ? (
-            <p className="text-sm text-ink-400 text-center py-8">No valid vendor combinations found with current filters. Try adjusting filters.</p>
+          {topResults.length === 0 ? (
+            <p className="text-sm text-ink-400 text-center py-8">No valid vendor combinations found with current filters.</p>
           ) : (
             <div className="space-y-3 animate-slide-up">
               <div className="overflow-hidden rounded-lg border border-ink-200">

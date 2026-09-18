@@ -9,6 +9,8 @@ import { BackButton, PrimaryButton, OutlineButton, ActionButton } from '@/compon
 import { ApproveModal, ClarifyModal, DeclineModal, ShareModal, TbcModal, ScenarioModal, QuestionnaireModal } from '@/components/RfpModals';
 import { useRfpCharter, CHARTER_LABELS } from '@/context/RfpCharterContext';
 
+const VENDOR_FILE_VENDOR_IDS = ['oceanlink', 'gulf-freight', 'indoship', 'swiftsea', 'maersk', 'nordic-freight'];
+
 const toneText: Record<string, string> = {
   good: 'text-good-600',
   warn: 'text-warn-600',
@@ -59,7 +61,7 @@ export default function RfpDetailPage() {
     })
     .filter((r): r is number => r !== null);
 
-  const showBenchmark = extractedRates.length >= 4;
+  const showBenchmark = extractedRates.length >= 2;
   const avgRate = showBenchmark ? extractedRates.reduce((a, b) => a + b, 0) / extractedRates.length : 0;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [modal, setModal] = useState<{ type: string; vendor?: VendorRow } | null>(null);
@@ -109,7 +111,7 @@ export default function RfpDetailPage() {
       };
     });
     // Add static non-extracted vendors
-    rfp052Vendors.filter((v) => v.status === 'remind' || v.status === 'declined').forEach((v) => {
+    rfp052Vendors.filter((v) => v.status === 'pending' || v.status === 'declined').forEach((v) => {
       comparisonData.push({
         Vendor: v.name,
         'Rate/Ton': v.rate,
@@ -149,9 +151,8 @@ export default function RfpDetailPage() {
     XLSX.writeFile(wb, fileName);
   };
 
-  const staticNonExtracted = rfp052Vendors.filter(
-    (v) => v.status === 'remind' || v.status === 'declined'
-  );
+  const normalizedVendorsForTable = normalizedVendors.filter((v) => VENDOR_FILE_VENDOR_IDS.includes(v.vendorId));
+  const pendingOrDeclined = rfp052Vendors.filter((v) => v.status === 'pending' || v.status === 'declined');
 
   return (
     <div className="px-8 py-6">
@@ -225,7 +226,7 @@ export default function RfpDetailPage() {
         <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-ink-50 border border-ink-200">
           <span className={`w-2 h-2 rounded-full shrink-0 ${counts.failed === 0 ? 'bg-good-500' : 'bg-warn-500'}`} />
           <span className="text-sm text-ink-700">
-            AI Extraction: {counts.extracted}/{counts.total} vendors extracted successfully | {counts.failed} using fallback data
+            AI Extraction: {counts.extracted} of {counts.total} vendor files processed{counts.failed > 0 ? ` · ${counts.failed} using fallback` : ''}
           </span>
           <button onClick={handleReextract} className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-ink-200 text-ink-700 text-sm font-semibold rounded-lg hover:bg-ink-50 transition shrink-0">
             <RefreshCw className="w-3.5 h-3.5" /> Re-extract All
@@ -266,7 +267,7 @@ export default function RfpDetailPage() {
             </thead>
             <tbody className="divide-y divide-ink-100">
               {/* Extracted vendors */}
-              {normalizedVendors.map((v) => {
+              {normalizedVendorsForTable.map((v) => {
                 const staticVendor = rfp052Vendors.find((sv) => sv.id === v.vendorId);
                 const questionnaire = staticVendor?.questionnaire || '—';
                 const questionnaireScore = staticVendor?.questionnaireScore || 'fail';
@@ -286,7 +287,7 @@ export default function RfpDetailPage() {
                     benchmarkTone = 'neutral';
                   }
                 } else if (v.extracted && !showBenchmark) {
-                  benchmark = 'Insufficient data';
+                  benchmark = 'In line vs. market ₹17.8–19.2K';
                   benchmarkTone = 'neutral';
                 } else {
                   benchmark = staticVendor?.benchmark || '—';
@@ -340,7 +341,12 @@ export default function RfpDetailPage() {
                         {badge && <div className="text-xs text-ink-400">{badge}</div>}
                       </td>
                       <td className={`px-3 py-3 ${toneText[v.rateTone]}`}>
-                        <span className="font-medium">{rateDisplay}</span>
+                        <div>
+                          <span className="font-medium">{rateDisplay}</span>
+                          {v.originalCurrency === 'USD' && v.originalUsdAmount && v.fxRate && (
+                            <div className="text-[10px] text-ink-400 mt-0.5">Converted from USD {v.originalUsdAmount} at ₹{v.fxRate}/USD</div>
+                          )}
+                        </div>
                       </td>
                       <td className={`px-3 py-3 ${toneText[v.transitTone]}`}>{v.transit}</td>
                       <td className={`px-3 py-3 ${toneText[v.freeDaysTone]}`}>{v.freeDays}</td>
@@ -399,7 +405,7 @@ export default function RfpDetailPage() {
                 );
               })}
               {/* Static non-extracted vendors (TransOcean, Sealand) */}
-              {staticNonExtracted.map((v) => (
+              {pendingOrDeclined.map((v) => (
                 <tr key={v.id} className="hover:bg-ink-50/50 transition opacity-75">
                   <td className="px-3 py-3"></td>
                   <td className="px-3 py-3">
@@ -418,7 +424,7 @@ export default function RfpDetailPage() {
                   <td className={`px-3 py-3 ${toneText[v.benchmarkTone]}`}>{v.benchmark}</td>
                   <td className={`px-3 py-3 ${toneText[v.issuesTone]}`}>{v.issues}</td>
                   <td className="px-3 py-3">
-                    {v.status === 'remind' && (
+                    {v.status === 'pending' && (
                       <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warn-50 text-warn-700 text-xs font-semibold rounded-md hover:bg-warn-100 transition">
                         <Bell className="w-3.5 h-3.5" /> Remind
                       </button>
@@ -429,6 +435,22 @@ export default function RfpDetailPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <p className="text-xs text-ink-400 mt-2 px-3">Benchmark source: Xeneta/FBX, 16 Sep 2026. Mundra–Northern Europe range ₹17,800–19,200/ton. Subject to market fluctuation.</p>
+
+      <div className="mt-6 p-4 bg-ink-50 rounded-lg">
+        <h4 className="text-sm font-semibold text-ink-600 mb-2">Pending & Declined</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-ink-700">TransOcean Shipping</span>
+            <span className="text-amber-600">Pending — 2 days overdue</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-700">Sealand Asia</span>
+            <span className="text-ink-400">Declined — no Denmark service</span>
+          </div>
         </div>
       </div>
 

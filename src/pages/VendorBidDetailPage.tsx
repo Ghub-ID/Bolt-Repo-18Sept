@@ -177,6 +177,7 @@ export default function VendorBidDetailPage() {
                 <span className="text-sm text-ink-500">{f.field_name}</span>
                 <div className="flex items-center gap-2">
                   {isFieldCorrected(f.field_name) && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-good-100 text-good-700">Corrected</span>}
+                  {f.confidence === 0.5 && f.value !== 'NOT_FOUND' && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-warn-100 text-warn-700">Estimated</span>}
                   <span className={`text-sm font-semibold ${f.value === 'NOT_FOUND' ? 'text-bad-600' : 'text-ink-800'}`}>{f.value}</span>
                   {extractedFields.length > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded ${f.confidence >= 0.8 ? 'bg-good-50 text-good-600' : f.confidence >= 0.5 ? 'bg-warn-50 text-warn-600' : 'bg-bad-50 text-bad-600'}`}>{f.confidence.toFixed(2)}</span>}
                 </div>
@@ -323,6 +324,7 @@ export default function VendorBidDetailPage() {
                                     {corrected && <CheckCircle2 className="w-3.5 h-3.5 text-good-600 shrink-0" />}
                                     <span className={f.value === 'NOT_FOUND' ? 'text-bad-600 font-medium' : corrected ? 'text-good-700 font-semibold' : 'text-ink-800'}>{f.value}</span>
                                     {corrected && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-good-100 text-good-700">Corrected</span>}
+                                    {f.confidence === 0.5 && f.value !== 'NOT_FOUND' && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-warn-100 text-warn-700">Estimated</span>}
                                   </div>
                                 </td>
                                 <td className="py-2.5">

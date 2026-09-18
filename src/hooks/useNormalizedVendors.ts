@@ -15,6 +15,9 @@ export interface NormalizedVendor {
   fields: ExtractedField[];
   extracted: boolean;
   extractionError?: string;
+  originalCurrency?: 'USD' | 'INR' | null;
+  fxRate?: number | null;
+  originalUsdAmount?: number | null;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -57,6 +60,32 @@ export function useNormalizedVendors(): NormalizedVendor[] {
     const rateValue = totalRate?.value || 'NOT_FOUND';
     const transitValue = transit?.value || 'NOT_FOUND';
     const freeDaysValue = freeDays?.value || 'NOT_FOUND';
+
+    const FX_USD_TO_INR = 83.5;
+
+    let displayRate = rateValue;
+    let originalCurrency: 'USD' | 'INR' | null = null;
+    let fxRate: number | null = null;
+    let originalUsdAmount: number | null = null;
+    if (rateValue && rateValue !== 'NOT_FOUND') {
+      const isUSD = /USD|\$/i.test(rateValue) || (currency?.value || '').toUpperCase().includes('USD');
+      if (isUSD) {
+        const num = parseFloat(rateValue.replace(/[^\d.]/g, ''));
+        if (!isNaN(num)) {
+          const inr = Math.round(num * FX_USD_TO_INR);
+          displayRate = '₹' + inr.toLocaleString('en-IN') + '/ton';
+          originalCurrency = 'USD';
+          fxRate = FX_USD_TO_INR;
+          originalUsdAmount = num;
+        }
+      } else if (!rateValue.includes('₹')) {
+        const num = rateValue.match(/[\d,]+/);
+        if (num) displayRate = '₹' + num[0] + '/ton';
+        originalCurrency = 'INR';
+      } else {
+        originalCurrency = 'INR';
+      }
+    }
 
     // Determine tones
     const avgConfidence = fields.length > 0
@@ -105,6 +134,9 @@ export function useNormalizedVendors(): NormalizedVendor[] {
       fields,
       extracted: v.extracted,
       extractionError: v.extractionError,
+      originalCurrency,
+      fxRate,
+      originalUsdAmount,
     };
   });
 }
