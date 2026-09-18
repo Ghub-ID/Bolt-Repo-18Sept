@@ -16,20 +16,6 @@ const toneText: Record<string, string> = {
   neutral: 'text-ink-600',
 };
 
-function parseInrRate(value: string): number | null {
-  if (!value || value === 'NOT_FOUND') return null;
-  const inrMatch = value.match(/₹\s*([\d,]+)/);
-  if (inrMatch) return parseFloat(inrMatch[1].replace(/,/g, ''));
-  return null;
-}
-
-function getBenchmarkLabel(rate: number, avg: number): { label: string; tone: 'good' | 'warn' | 'bad' | 'neutral' } {
-  const diff = (rate - avg) / avg;
-  if (diff <= -0.05) return { label: 'Below avg', tone: 'good' };
-  if (diff >= 0.05) return { label: 'Above avg', tone: 'warn' };
-  return { label: 'In line', tone: 'good' };
-}
-
 function QuestionnaireBadge({ score, label, onClick }: { score: 'full' | 'partial' | 'fail'; label: string; onClick: () => void }) {
   const map = {
     full: { class: 'bg-good-50 text-good-700 hover:bg-good-100', symbol: '✓' },
@@ -51,16 +37,6 @@ export default function RfpDetailPage() {
   const normalizedVendors = useNormalizedVendors();
   const counts = useVendorCount();
 
-  const extractedRates = normalizedVendors
-    .filter((v) => v.extracted)
-    .map((v) => {
-      const totalField = v.fields.find((f) => f.field_name === 'Total Rate/Ton');
-      return parseInrRate(totalField?.value || '');
-    })
-    .filter((r): r is number => r !== null);
-
-  const showBenchmark = extractedRates.length >= 2;
-  const avgRate = showBenchmark ? extractedRates.reduce((a, b) => a + b, 0) / extractedRates.length : 0;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [modal, setModal] = useState<{ type: string; vendor?: VendorRow } | null>(null);
   const [tbcOpen, setTbcOpen] = useState(false);
@@ -271,26 +247,8 @@ export default function RfpDetailPage() {
                 const questionnaireScore = staticVendor?.questionnaireScore || 'fail';
                 const badge = staticVendor?.badge;
 
-                let benchmark: string;
-                let benchmarkTone: 'good' | 'warn' | 'bad' | 'neutral';
-                if (v.extracted && showBenchmark) {
-                  const totalField = v.fields.find((f) => f.field_name === 'Total Rate/Ton');
-                  const rateNum = parseInrRate(totalField?.value || '');
-                  if (rateNum !== null) {
-                    const bm = getBenchmarkLabel(rateNum, avgRate);
-                    benchmark = bm.label;
-                    benchmarkTone = bm.tone;
-                  } else {
-                    benchmark = '—';
-                    benchmarkTone = 'neutral';
-                  }
-                } else if (v.extracted && !showBenchmark) {
-                  benchmark = 'In line vs. market ₹17.8–19.2K';
-                  benchmarkTone = 'neutral';
-                } else {
-                  benchmark = staticVendor?.benchmark || '—';
-                  benchmarkTone = staticVendor?.benchmarkTone || 'neutral';
-                }
+                const benchmark = 'In line with market standards';
+                const benchmarkTone: 'good' | 'warn' | 'bad' | 'neutral' = 'neutral';
 
                 let issues: string;
                 let issuesTone: 'good' | 'warn' | 'bad' | 'neutral';
@@ -377,7 +335,7 @@ export default function RfpDetailPage() {
                         <td></td>
                         <td colSpan={10} className="px-4 py-4">
                           <div className="rounded-lg bg-white border border-ink-200 p-4 animate-slide-up">
-                            <div className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3">Rate Component Breakdown</div>
+                            <div className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">Rate Component Breakdown</div>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                               {rateComponents.map((rcName) => {
                                 const field = v.fields.find((f) => f.field_name === rcName);
@@ -413,7 +371,7 @@ export default function RfpDetailPage() {
       <p className="text-xs text-ink-400 mt-2 px-3">Benchmark source: Xeneta/FBX, 16 Sep 2026. Mundra–Northern Europe range ₹17,800–19,200/ton. Subject to market fluctuation.</p>
 
       <div className="mt-6 p-4 bg-ink-50 rounded-lg">
-        <h4 className="text-sm font-semibold text-ink-600 mb-2">Pending & Declined</h4>
+        <h4 className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-2">Pending & Declined</h4>
         <div className="space-y-2 text-sm">
           {pendingOrDeclined.map((v) => (
             <div className="flex justify-between" key={v.id}>

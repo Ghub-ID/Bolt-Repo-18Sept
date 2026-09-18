@@ -51,46 +51,61 @@ export default function BidsManagementPage() {
       />
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MetricCard label="Open Bids" value={3} tone="primary" icon="📋" />
-        <MetricCard label="Pending Clarification" value={2} tone="warn" icon="⚠" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <MetricCard label="Open Bids" value={1} tone="primary" icon="📋" />
         <MetricCard label="In Approval" value={1} tone="info" icon="✓" />
-        <MetricCard label="Awarded YTD" value={12} tone="good" icon="🏆" />
+        <MetricCard label="Awarded YTD" value={5} tone="good" icon="🏆" />
       </div>
 
       {/* RFP list */}
       <div className="bg-white rounded-xl border border-ink-200 shadow-card overflow-hidden">
         <div className="px-5 py-3.5 border-b border-ink-200 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-700">All RFPs</h2>
+          <h2 className="text-sm font-semibold text-ink-600 uppercase tracking-wide">All RFPs</h2>
           <span className="text-xs text-ink-400">{rfpList.length} items</span>
         </div>
         <div className="divide-y divide-ink-100">
-          {displayList.map((rfp) => (
-            <button
-              key={rfp.id}
-              onClick={() => navigate(`/bids/${rfp.id}`)}
-              className="w-full flex items-center gap-4 px-5 py-4 hover:bg-ink-50 transition group text-left"
-            >
-              <div className="shrink-0 w-20">
-                <span className="text-sm font-bold text-primary-600">{rfp.number}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-ink-800 truncate">{rfp.title}</div>
-                <div className="text-xs text-ink-500 mt-0.5">
-                  {rfp.commodity} · {rfp.origin} → {rfp.destination} · {rfp.date}
+          {displayList.map((rfp) => {
+            const isClickable = rfp.id === '052';
+            const rowContent = (
+              <>
+                <div className="shrink-0 w-20">
+                  <span className="text-sm font-bold text-primary-600">{rfp.number}</span>
                 </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-ink-800 truncate">{rfp.title}</div>
+                  <div className="text-xs text-ink-500 mt-0.5">
+                    {rfp.commodity} · {rfp.origin} → {rfp.destination} · {rfp.date}
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <StatusTag status={rfp.status} />
+                </div>
+                <div className="shrink-0 w-44 text-right text-xs text-ink-500">
+                  {rfp.bidCount && <span className="font-medium text-ink-600">{rfp.bidCount}</span>}
+                  {rfp.awardedValue && <span className="font-bold text-good-600">{rfp.awardedValue}</span>}
+                  {!rfp.bidCount && !rfp.awardedValue && <span className="text-ink-400">—</span>}
+                </div>
+                {isClickable ? (
+                  <ChevronRight className="w-5 h-5 text-ink-300 group-hover:text-primary-500 transition shrink-0" />
+                ) : (
+                  <span className="text-xs text-ink-400 shrink-0">Mock data</span>
+                )}
+              </>
+            );
+            return isClickable ? (
+              <button
+                key={rfp.id}
+                onClick={() => navigate(`/bids/${rfp.id}`)}
+                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-ink-50 transition group text-left"
+              >
+                {rowContent}
+              </button>
+            ) : (
+              <div key={rfp.id} className="w-full flex items-center gap-4 px-5 py-4 opacity-60">
+                {rowContent}
               </div>
-              <div className="shrink-0">
-                <StatusTag status={rfp.status} />
-              </div>
-              <div className="shrink-0 w-44 text-right text-xs text-ink-500">
-                {rfp.bidCount && <span className="font-medium text-ink-600">{rfp.bidCount}</span>}
-                {rfp.awardedValue && <span className="font-bold text-good-600">{rfp.awardedValue}</span>}
-                {!rfp.bidCount && !rfp.awardedValue && <span className="text-ink-400">—</span>}
-              </div>
-              <ChevronRight className="w-5 h-5 text-ink-300 group-hover:text-primary-500 transition shrink-0" />
-            </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 

@@ -21,7 +21,7 @@ export default function MetricCard({ label, value, tone = 'primary', icon }: Met
         <span className="text-xs font-medium text-ink-500">{label}</span>
         {icon && <span className={`w-7 h-7 rounded-lg ${s.bg} ${s.text} flex items-center justify-center text-sm`}>{icon}</span>}
       </div>
-      <div className={`text-2xl font-bold ${s.text}`}>{value}</div>
+      <div className="text-2xl font-semibold text-ink-900">{value}</div>
     </div>
   );
 }

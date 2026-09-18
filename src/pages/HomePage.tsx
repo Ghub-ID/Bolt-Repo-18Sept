@@ -3,18 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Send, FilePlus, Receipt, ClipboardCheck, Clock, Sparkles } from 'lucide-react';
 
 const quickActions = [
-  { label: 'Create new RFP', icon: FilePlus, path: '/rfp/create', tone: 'primary' as const },
-  { label: 'Check pending invoices', icon: Receipt, path: '/invoices', tone: 'warn' as const },
-  { label: 'Review open bids', icon: ClipboardCheck, path: '/bids', tone: 'info' as const },
-  { label: 'Recent activity', icon: Clock, path: '/recent', tone: 'neutral' as const },
+  { label: 'Create new RFP', icon: FilePlus, path: '/rfp/create' },
+  { label: 'Review open bids', icon: ClipboardCheck, path: '/bids' },
+  { label: 'Check pending invoices', icon: Receipt, path: '/invoices' },
+  { label: 'Recent activity', icon: Clock, path: '/recent' },
 ];
-
-const toneClasses = {
-  primary: 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 hover:border-primary-300',
-  warn: 'border-warn-200 bg-warn-50 text-warn-700 hover:bg-warn-100 hover:border-warn-300',
-  info: 'border-info-200 bg-info-50 text-info-700 hover:bg-info-100 hover:border-info-300',
-  neutral: 'border-ink-200 bg-white text-ink-700 hover:bg-ink-50 hover:border-ink-300',
-};
 
 export default function HomePage() {
   const [input, setInput] = useState('');
@@ -33,12 +26,10 @@ export default function HomePage() {
           FreightIQ Co-pilot · powered by AI
         </div>
 
-        <h1 className="text-4xl font-bold text-ink-900 tracking-tight mb-3 animate-slide-up">
+        <p className="text-sm text-ink-500 mb-1 animate-slide-up">Hi Ishita</p>
+        <h1 className="text-4xl font-bold text-ink-900 tracking-tight mb-8 animate-slide-up">
           How can I help you today?
         </h1>
-        <p className="text-ink-500 text-lg mb-8 animate-slide-up">
-          Describe a freight requirement, ask about open bids, or pick a quick action below.
-        </p>
 
         {/* Input */}
         <div className="relative flex items-center mb-6 animate-slide-up">
@@ -60,16 +51,16 @@ export default function HomePage() {
         </div>
 
         {/* Quick actions */}
-        <div className="flex flex-wrap items-center justify-center gap-2.5 animate-slide-up">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
               <button
                 key={action.label}
                 onClick={() => navigate(action.path)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium border transition active:scale-95 ${toneClasses[action.tone]}`}
+                className="h-12 px-5 py-3 rounded-xl bg-white border border-ink-200 text-sm font-medium text-ink-700 hover:border-primary-400 hover:shadow-card transition active:scale-95 inline-flex items-center justify-center gap-2"
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 text-primary-500" />
                 {action.label}
               </button>
             );

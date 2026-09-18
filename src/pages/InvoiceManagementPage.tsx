@@ -34,12 +34,24 @@ export default function InvoiceManagementPage() {
               <Share2 className="w-4 h-4" />
               Share
             </OutlineButton>
+            <button
+              disabled
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-ink-200 text-ink-400 bg-ink-50 cursor-not-allowed"
+              title="Coming in Phase 2"
+            >
+              Ask Analyst
+            </button>
           </>
         }
       />
 
+      {/* Mock data banner */}
+      <div className="mb-4 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+        Mock-up for Phase 2 · All data on this page is static for demonstration
+      </div>
+
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <MetricCard label="Open" value={14} tone="primary" icon="📄" />
         <MetricCard label="Discrepancies" value={5} tone="bad" icon="⚠" />
         <MetricCard label="Detention Alerts" value={3} tone="warn" icon="⏰" />
@@ -48,7 +60,7 @@ export default function InvoiceManagementPage() {
       </div>
 
       {/* Red alert banner */}
-      <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-bad-50 border border-bad-100">
+      <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-bad-50 border border-bad-100">
         <AlertCircle className="w-5 h-5 text-bad-600 shrink-0" />
         <div className="flex-1">
           <span className="text-sm font-medium text-bad-700">5 invoices have discrepancies requiring attention</span>
@@ -62,7 +74,7 @@ export default function InvoiceManagementPage() {
       {/* Invoice list */}
       <div className="bg-white rounded-xl border border-ink-200 shadow-card overflow-hidden">
         <div className="px-5 py-3.5 border-b border-ink-200 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-700">All Invoices</h2>
+          <h2 className="text-sm font-semibold text-ink-600 uppercase tracking-wide">All Invoices</h2>
           <span className="text-xs text-ink-400">{invoices.length} items</span>
         </div>
         <div className="divide-y divide-ink-100">

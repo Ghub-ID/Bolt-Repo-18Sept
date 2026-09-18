@@ -1,4 +1,4 @@
-export type RfpStatus = 'Open' | 'In Approval' | 'Awarded' | 'Closed';
+export type RfpStatus = 'Open' | 'In Approval' | 'Awarded';
 
 export interface RfpListItem {
   id: string;
@@ -19,7 +19,7 @@ export const rfpList: RfpListItem[] = [
   { id: '045', number: 'RFP-045', title: 'Coffee Beans → Hamburg', commodity: 'Coffee Beans', origin: 'Mundra, IN', destination: 'Hamburg, DE', status: 'Awarded', awardedValue: '₹6.8L', date: 'Aug 28, 2026' },
   { id: '041', number: 'RFP-041', title: 'Basmati Rice → Dubai', commodity: 'Basmati Rice', origin: 'Kandla, IN', destination: 'Dubai, UAE', status: 'Awarded', awardedValue: '₹4.2L', date: 'Aug 14, 2026' },
   { id: '038', number: 'RFP-038', title: 'Raw Cotton → Mombasa', commodity: 'Raw Cotton', origin: 'Mundra, IN', destination: 'Mombasa, KE', status: 'Awarded', awardedValue: '₹18.6L', date: 'Jul 22, 2026' },
-  { id: '033', number: 'RFP-033', title: 'Specialty Cocoa → Rotterdam', commodity: 'Specialty Cocoa', origin: 'Tuticorin, IN', destination: 'Rotterdam, NL', status: 'Closed', date: 'Jul 01, 2026' },
+  { id: '033', number: 'RFP-033', title: 'Specialty Cocoa → Rotterdam', commodity: 'Specialty Cocoa', origin: 'Tuticorin, IN', destination: 'Rotterdam, NL', status: 'Awarded', date: 'Jul 01, 2026' },
   { id: '029', number: 'RFP-029', title: 'Bagged Rice → Dammam', commodity: 'Bagged Rice', origin: 'Mundra, IN', destination: 'Dammam, SA', status: 'Awarded', awardedValue: '₹3.1L', date: 'Jun 18, 2026' },
 ];
 
