@@ -26,7 +26,7 @@ export default function HomePage() {
           FreightIQ Co-pilot · powered by AI
         </div>
 
-        <p className="text-sm text-ink-500 mb-1 animate-slide-up">Hi Ishita</p>
+        <p className="text-sm text-ink-500 mb-1 animate-slide-up">Hi Neel</p>
         <h1 className="text-4xl font-bold text-ink-900 tracking-tight mb-8 animate-slide-up">
           How can I help you today?
         </h1>
@@ -58,7 +58,7 @@ export default function HomePage() {
               <button
                 key={action.label}
                 onClick={() => navigate(action.path)}
-                className="h-12 px-5 py-3 rounded-xl bg-white border border-ink-200 text-sm font-medium text-ink-700 hover:border-primary-400 hover:shadow-card transition active:scale-95 inline-flex items-center justify-center gap-2"
+                className="w-full h-auto min-h-[52px] px-4 py-3 rounded-xl bg-white border border-ink-200 text-sm font-medium text-ink-700 hover:border-primary-400 hover:shadow-card transition active:scale-95 flex items-center justify-center gap-2 text-center whitespace-normal leading-snug"
               >
                 <Icon className="w-4 h-4 text-primary-500" />
                 {action.label}

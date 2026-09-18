@@ -26,10 +26,10 @@ export default function Sidebar() {
       {/* User profile */}
       <div className="mx-3 mb-4 p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center font-semibold text-sm shrink-0">
-          IS
+          NR
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-semibold truncate">Ishita S.</div>
+          <div className="text-sm font-semibold truncate">Neel Rao</div>
           <div className="text-[11px] text-white/50 truncate">Category Head — Freight</div>
         </div>
       </div>
