@@ -1,15 +1,13 @@
 import { useState, Fragment, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, AlertTriangle, GitBranch, ClipboardCheck, Bell, Download, Share2, Sparkles, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, GitBranch, ClipboardCheck, Download, Share2, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { rfp052Vendors, charterFieldsForVendor, charterGroupNames, type VendorRow } from '@/data/freightData';
-import { useVendorData, VENDOR_FILE_NAMES } from '@/context/VendorDataContext';
+import { useVendorData, VENDOR_FILE_NAMES, VENDOR_FILES, CACHE_KEY } from '@/context/VendorDataContext';
 import { useNormalizedVendors, useVendorCount } from '@/hooks/useNormalizedVendors';
 import { BackButton, PrimaryButton, OutlineButton, ActionButton } from '@/components/ui';
 import { ApproveModal, ClarifyModal, DeclineModal, ShareModal, TbcModal, ScenarioModal, QuestionnaireModal } from '@/components/RfpModals';
 import { useRfpCharter, CHARTER_LABELS } from '@/context/RfpCharterContext';
-
-const VENDOR_FILE_VENDOR_IDS = ['oceanlink', 'gulf-freight', 'indoship', 'swiftsea', 'maersk', 'nordic-freight'];
 
 const toneText: Record<string, string> = {
   good: 'text-good-600',
@@ -86,7 +84,7 @@ export default function RfpDetailPage() {
   }, []);
 
   const handleReextract = () => {
-    sessionStorage.removeItem('freightiq_vendor_extractions');
+    sessionStorage.removeItem(CACHE_KEY);
     sessionStorage.removeItem('freightiq_corrections');
     retry();
   };
@@ -129,7 +127,7 @@ export default function RfpDetailPage() {
 
     // Sheet 2: 30 charter party fields per vendor
     const charterData: Record<string, string>[] = [];
-    const activeVendorIds = ['oceanlink', 'gulf-freight', 'indoship', 'nordic-freight', 'swiftsea', 'maersk'];
+    const activeVendorIds = ['oceanlink', 'gulf-freight', 'indoship', 'swiftsea', 'maersk', 'transocean'];
     activeVendorIds.forEach((vid) => {
       const fields = charterFieldsForVendor(vid);
       fields.forEach((f) => {
@@ -151,7 +149,7 @@ export default function RfpDetailPage() {
     XLSX.writeFile(wb, fileName);
   };
 
-  const normalizedVendorsForTable = normalizedVendors.filter((v) => VENDOR_FILE_VENDOR_IDS.includes(v.vendorId));
+  const normalizedVendorsForTable = normalizedVendors.filter((v) => VENDOR_FILES.some((f) => f.vendorId === v.vendorId));
   const pendingOrDeclined = rfp052Vendors.filter((v) => v.status === 'pending' || v.status === 'declined');
 
   return (
@@ -346,6 +344,9 @@ export default function RfpDetailPage() {
                           {v.originalCurrency === 'USD' && v.originalUsdAmount && v.fxRate && (
                             <div className="text-[10px] text-ink-400 mt-0.5">Converted from USD {v.originalUsdAmount} at ₹{v.fxRate}/USD</div>
                           )}
+                          {v.rateNote && (
+                            <div className="text-[10px] text-ink-400 mt-0.5">{v.rateNote}</div>
+                          )}
                         </div>
                       </td>
                       <td className={`px-3 py-3 ${toneText[v.transitTone]}`}>{v.transit}</td>
@@ -404,35 +405,6 @@ export default function RfpDetailPage() {
                   </Fragment>
                 );
               })}
-              {/* Static non-extracted vendors (TransOcean, Sealand) */}
-              {pendingOrDeclined.map((v) => (
-                <tr key={v.id} className="hover:bg-ink-50/50 transition opacity-75">
-                  <td className="px-3 py-3"></td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-ink-800">{v.name}</span>
-                      <span title="No extraction attempted." className="text-xs cursor-help">📋</span>
-                    </div>
-                    {v.badge && <div className="text-xs text-ink-400">{v.badge}</div>}
-                  </td>
-                  <td className={`px-3 py-3 ${toneText[v.rateTone]}`}><span className="font-medium">{v.rate}</span></td>
-                  <td className={`px-3 py-3 ${toneText[v.transitTone]}`}>{v.transit}</td>
-                  <td className={`px-3 py-3 ${toneText[v.freeDaysTone]}`}>{v.freeDays}</td>
-                  <td className="px-3 py-3"><span className="text-ink-400">—</span></td>
-                  <td className="px-3 py-3 text-ink-600">{v.format}</td>
-                  <td className={`px-3 py-3 ${toneText[v.confidenceTone]}`}>{v.confidence}</td>
-                  <td className={`px-3 py-3 ${toneText[v.benchmarkTone]}`}>{v.benchmark}</td>
-                  <td className={`px-3 py-3 ${toneText[v.issuesTone]}`}>{v.issues}</td>
-                  <td className="px-3 py-3">
-                    {v.status === 'pending' && (
-                      <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warn-50 text-warn-700 text-xs font-semibold rounded-md hover:bg-warn-100 transition">
-                        <Bell className="w-3.5 h-3.5" /> Remind
-                      </button>
-                    )}
-                    {v.status === 'declined' && <span className="text-xs text-bad-600 font-medium">Declined</span>}
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
@@ -443,14 +415,14 @@ export default function RfpDetailPage() {
       <div className="mt-6 p-4 bg-ink-50 rounded-lg">
         <h4 className="text-sm font-semibold text-ink-600 mb-2">Pending & Declined</h4>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-ink-700">TransOcean Shipping</span>
-            <span className="text-amber-600">Pending — 2 days overdue</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-ink-700">Sealand Asia</span>
-            <span className="text-ink-400">Declined — no Denmark service</span>
-          </div>
+          {pendingOrDeclined.map((v) => (
+            <div className="flex justify-between" key={v.id}>
+              <span className="text-ink-700">{v.name}</span>
+              <span className={v.status === 'pending' ? 'text-amber-600' : 'text-ink-400'}>
+                {v.status === 'pending' ? `Pending — ${v.issues}` : `Declined — ${v.issues}`}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 

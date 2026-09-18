@@ -24,6 +24,8 @@ Do not guess. Do not infer. Only extract what is explicitly stated.
 
 If a vendor quotes an all-in rate without breaking out components, and the source is a Word document or prose format, estimate components as: Ocean Freight 75%, BAF 10%, THC Origin 5%, THC Dest 5%, Documentation 5% of total. Mark each estimated component with confidence 0.5 and note 'AI-estimated from all-in rate'.
 
+If a vendor quotes a rate as a percentage change from a past tender (e.g., 'same as last year +8%' or '8% more than previous rate'), look up the vendor's prior rate in the historical data provided. If prior rate is available, compute new rate = prior rate × (1 + percentage/100). If prior rate is not available, flag the rate as NOT_FOUND with note 'References prior rate — historical lookup required.' Never leave the rate blank.
+
 THE 30 FIELDS:
 Group 1 — Freight Components: Ocean Freight, BAF, THC Origin, THC Destination, Documentation, BL+ISPS, Total Rate/Ton, Rate per Container, Currency, Rate Validity
 Group 2 — Vessel & Voyage: Vessel Name, Vessel DWT, Vessel Flag, Laycan Start, Laycan End, Transit Time, Load Rate (MT/day), Discharge Rate (MT/day)

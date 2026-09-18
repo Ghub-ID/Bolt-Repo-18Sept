@@ -18,6 +18,7 @@ export interface NormalizedVendor {
   originalCurrency?: 'USD' | 'INR' | null;
   fxRate?: number | null;
   originalUsdAmount?: number | null;
+  rateNote?: string | null;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -87,6 +88,11 @@ export function useNormalizedVendors(): NormalizedVendor[] {
       }
     }
 
+    let rateNote: string | null = null;
+    if (totalRate?.notes && /calculated|prior/i.test(totalRate.notes)) {
+      rateNote = 'Computed from prior RFP-033 rate';
+    }
+
     // Determine tones
     const avgConfidence = fields.length > 0
       ? fields.reduce((sum, f) => sum + f.confidence, 0) / fields.length
@@ -122,7 +128,7 @@ export function useNormalizedVendors(): NormalizedVendor[] {
     return {
       vendorId: v.vendorId,
       vendorName: v.vendorName,
-      rate: rateValue === 'NOT_FOUND' ? 'NOT_FOUND' : rateValue,
+      rate: rateValue === 'NOT_FOUND' ? 'NOT_FOUND' : displayRate,
       rateTone,
       transit: transitValue === 'NOT_FOUND' ? '—' : transitValue,
       transitTone,
@@ -137,6 +143,7 @@ export function useNormalizedVendors(): NormalizedVendor[] {
       originalCurrency,
       fxRate,
       originalUsdAmount,
+      rateNote,
     };
   });
 }

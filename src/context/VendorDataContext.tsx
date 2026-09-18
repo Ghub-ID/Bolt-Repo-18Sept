@@ -44,10 +44,10 @@ const VENDOR_FILES = [
   { vendorId: 'indoship', vendorName: 'IndoShip NVOCC', fileName: 'IndoShip_Quote_RFP052.docx', fileType: 'docx' as const },
   { vendorId: 'swiftsea', vendorName: 'SwiftSea Shipping', fileName: 'SwiftSea_RateCard.jpg', fileType: 'jpg' as const },
   { vendorId: 'maersk', vendorName: 'Maersk Line Direct', fileName: 'Maersk_Quote_RFP052.csv', fileType: 'csv' as const },
-  { vendorId: 'nordic-freight', vendorName: 'Nordic Freight', fileName: 'NordicFreight_Quote_RFP052.csv', fileType: 'csv' as const },
+  { vendorId: 'transocean', vendorName: 'TransOcean Shipping', fileName: 'TransOcean_Email_RFP052.txt', fileType: 'txt' as const },
 ];
 
-const CACHE_KEY = 'freightiq_vendor_extractions';
+const CACHE_KEY = 'freightiq_vendor_extractions_v2';
 const CORRECTIONS_KEY = 'freightiq_corrections';
 
 function loadFromCache(): Record<string, ExtractedVendor> | null {
@@ -260,7 +260,21 @@ const FALLBACK_FIELDS: Record<string, ExtractedField[]> = {
     { field_name: 'Stowage Factor', value: '1.4 MT/m³', confidence: 0.83, source_snippet: 'Stowage: 1.4', source_location: 'CSV · row 32', notes: '' },
     { field_name: 'Container Type/Count', value: "20' FCL × 25", confidence: 0.89, source_snippet: 'Containers: 20FCL x25', source_location: 'CSV · row 33', notes: '' },
   ],
-  'transocean': [],
+  'transocean': [
+    { field_name: 'Total Rate/Ton', value: '₹17,820/ton', confidence: 0.7, source_snippet: 'same as last tender plus 8%', source_location: 'Email · line 8', notes: 'Calculated: prior ₹16,500 + 8%' },
+    { field_name: 'Currency', value: 'INR (computed)', confidence: 0.7, source_snippet: 'computed from prior rate', source_location: 'Email · computed', notes: '' },
+    { field_name: 'Transit Time', value: '24-28 days', confidence: 0.85, source_snippet: 'transit of 24-28 days', source_location: 'Email · line 8', notes: '' },
+    { field_name: 'Free Days', value: '14 days', confidence: 0.85, source_snippet: '14 free days', source_location: 'Email · line 8', notes: '' },
+    { field_name: 'Vessel Name', value: 'MV Trans Atlantic', confidence: 0.85, source_snippet: 'MV Trans Atlantic', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Vessel DWT', value: '55,000 MT', confidence: 0.85, source_snippet: '55,000 DWT', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Vessel Flag', value: 'Panama', confidence: 0.85, source_snippet: 'Panama flag', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Laycan Start', value: 'Oct 15, 2026', confidence: 0.85, source_snippet: 'laycan 15-22 Oct', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Laycan End', value: 'Oct 22, 2026', confidence: 0.85, source_snippet: 'laycan 15-22 Oct', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Load Rate (MT/day)', value: '7,200', confidence: 0.85, source_snippet: 'Load rate 7,200 MT/day', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Discharge Rate (MT/day)', value: '5,200', confidence: 0.85, source_snippet: 'discharge rate 5,200 MT/day', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'NOR Clause', value: 'WIBON/WIPON', confidence: 0.85, source_snippet: 'NOR clause WIBON/WIPON', source_location: 'Email · line 10', notes: '' },
+    { field_name: 'Payment Terms', value: '30 days from BL', confidence: 0.85, source_snippet: 'Payment 30 days from BL', source_location: 'Email · line 10', notes: '' },
+  ],
 };
 
 const VENDOR_FILE_NAMES: Record<string, string> = {
@@ -269,7 +283,7 @@ const VENDOR_FILE_NAMES: Record<string, string> = {
   'indoship': 'IndoShip_Quote_RFP052.docx',
   'swiftsea': 'SwiftSea_RateCard.jpg',
   'maersk': 'Maersk_Quote_RFP052.csv',
-  'nordic-freight': 'NordicFreight_Quote_RFP052.csv',
+  'transocean': 'TransOcean_Email_RFP052.txt',
 };
 
 async function fetchAndExtract(vendor: typeof VENDOR_FILES[0]): Promise<ExtractedVendor> {
@@ -336,6 +350,27 @@ function getFallbackVendor(vendor: typeof VENDOR_FILES[0], error?: string): Extr
   };
 }
 
+const TRANSOCEAN_PRIOR_RATE = 16500;
+const TRANSOCEAN_PCT_CHANGE = 0.08;
+
+function applyTransOceanRateFallback(vendor: ExtractedVendor): ExtractedVendor {
+  if (vendor.vendorId !== 'transocean') return vendor;
+  const totalField = vendor.fields.find((f) => f.field_name === 'Total Rate/Ton');
+  const needsCalc = !totalField || totalField.value === 'NOT_FOUND' || /historical lookup|prior rate|last tender/i.test(totalField.notes || '');
+  if (!needsCalc) return vendor;
+  const computed = Math.round(TRANSOCEAN_PRIOR_RATE * (1 + TRANSOCEAN_PCT_CHANGE));
+  const fields = vendor.fields.filter((f) => f.field_name !== 'Total Rate/Ton');
+  fields.push({
+    field_name: 'Total Rate/Ton',
+    value: `₹${computed.toLocaleString('en-IN')}/ton`,
+    confidence: 0.7,
+    source_snippet: 'same as last tender plus 8%',
+    source_location: 'Email · line 8',
+    notes: 'Calculated: prior ₹16,500 + 8%',
+  });
+  return { ...vendor, fields };
+}
+
 export function VendorDataProvider({ children }: { children: ReactNode }) {
   const [vendors, setVendors] = useState<Record<string, ExtractedVendor>>({});
   const [loading, setLoading] = useState(true);
@@ -363,7 +398,7 @@ export function VendorDataProvider({ children }: { children: ReactNode }) {
     results.forEach((result, i) => {
       const vendor = VENDOR_FILES[i];
       if (result.status === 'fulfilled' && result.value.extracted && result.value.fields.length > 0) {
-        newVendors[vendor.vendorId] = result.value;
+        newVendors[vendor.vendorId] = applyTransOceanRateFallback(result.value);
       } else {
         const errorMsg = result.status === 'rejected'
           ? `${result.reason instanceof Error ? result.reason.message : String(result.reason)} at ${new Date().toISOString()}`
@@ -490,4 +525,4 @@ export function useVendorData() {
   return ctx;
 }
 
-export { VENDOR_FILE_NAMES };
+export { VENDOR_FILE_NAMES, VENDOR_FILES, CACHE_KEY };
