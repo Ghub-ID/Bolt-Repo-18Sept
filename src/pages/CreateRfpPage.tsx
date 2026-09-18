@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, Send, Check, Pencil, FileText, Loader2, Save, X } from 'lucide-react';
 import Modal from '@/components/Modal';
 import { PrimaryButton, OutlineButton } from '@/components/ui';
@@ -21,6 +21,21 @@ const GREETING: ChatMessage = {
   role: 'ai',
   text: 'Hi! I am your RFP Co-pilot. I will help you draft a chartering inquiry. To get started, what commodity are you shipping, what volume, and from which port?',
 };
+
+function parseOptions(text: string): { question: string; options: string[] } | null {
+  const qMatch = text.match(/QUESTION:\s*(.+)/i);
+  const oMatch = text.match(/OPTIONS:\s*(.+)/i);
+  if (!qMatch || !oMatch) return null;
+  const options = oMatch[1].split('|').map(s => s.trim()).filter(Boolean);
+  return { question: qMatch[1].trim(), options };
+}
+
+function stripQuestionOptions(text: string): string {
+  return text
+    .replace(/QUESTION:\s*.+/i, '')
+    .replace(/OPTIONS:\s*.+/i, '')
+    .trim();
+}
 
 function parseRfpJson(text: string): RfpCharter | null {
   const match = text.match(/<RFP_JSON>\s*([\s\S]*?)\s*<\/RFP_JSON>/i);
@@ -53,6 +68,7 @@ function stripRfpJson(text: string): string {
 
 export default function CreateRfpPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { charter, setCharter } = useRfpCharter();
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState('');
@@ -70,18 +86,9 @@ export default function CreateRfpPage() {
     }
   }, [messages, loading]);
 
-  const handleSend = async (e: FormEvent) => {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
-
-    const userMsg: ChatMessage = { role: 'user', text };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setInput('');
+  const sendToCopilot = async (userText: string, history: ChatMessage[]) => {
     setLoading(true);
     setError(null);
-
     try {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rfcopilot-chat`;
       const response = await fetch(apiUrl, {
@@ -91,7 +98,7 @@ export default function CreateRfpPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: newMessages.map((m) => ({ role: m.role, text: m.text })),
+          messages: history.map((m) => ({ role: m.role, text: m.text })),
         }),
       });
 
@@ -117,6 +124,40 @@ export default function CreateRfpPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const initialAskRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const initialAsk = (location.state as { initialAsk?: string } | null)?.initialAsk;
+    if (initialAsk && !initialAskRef.current) {
+      initialAskRef.current = initialAsk;
+      const userMsg: ChatMessage = { role: 'user', text: initialAsk };
+      const newMessages = [userMsg];
+      setMessages(newMessages);
+      sendToCopilot(initialAsk, newMessages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  const handleSend = async (e: FormEvent) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const userMsg: ChatMessage = { role: 'user', text };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput('');
+    await sendToCopilot(text, newMessages);
+  };
+
+  const sendUserMessage = (text: string) => {
+    if (loading) return;
+    const userMsg: ChatMessage = { role: 'user', text };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    sendToCopilot(text, newMessages);
   };
 
   const startEdit = () => {
@@ -176,19 +217,37 @@ export default function CreateRfpPage() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin px-6 py-6 space-y-4">
         <div className="max-w-3xl mx-auto space-y-4">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-primary-500 text-white rounded-br-sm'
-                    : 'bg-white border border-ink-200 text-ink-700 rounded-bl-sm shadow-card'
-                }`}
-              >
-                {msg.text}
+          {messages.map((msg, i) => {
+            const isLatestAi = msg.role === 'ai' && i === messages.length - 1;
+            const parsed = isLatestAi ? parseOptions(msg.text) : null;
+            const displayText = parsed ? stripQuestionOptions(msg.text) : msg.text;
+            return (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-primary-500 text-white rounded-br-sm'
+                      : 'bg-white border border-ink-200 text-ink-700 rounded-bl-sm shadow-card'
+                  }`}
+                >
+                  {displayText}
+                  {parsed && parsed.options.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {parsed.options.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => sendUserMessage(opt)}
+                          className="px-3 py-1.5 text-xs font-medium rounded-full border border-primary-300 text-primary-700 bg-primary-50 hover:bg-primary-100 transition"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {loading && (
             <div className="flex justify-start">

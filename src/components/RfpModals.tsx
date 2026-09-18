@@ -172,16 +172,39 @@ export function ShareModal({ open, onClose, context }: { open: boolean; onClose:
 import { useRfpCharter, TBC_DROPDOWN_OPTIONS, CHARTER_LABELS } from '@/context/RfpCharterContext';
 
 export function TbcModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { charter, resolveTbc } = useRfpCharter();
+  const { charter, setCharter } = useRfpCharter();
   const [done, setDone] = useState(false);
-  const handleClose = () => { setDone(false); onClose(); };
+  const [selections, setSelections] = useState<Record<string, string>>({});
 
-  const tbcFields = charter.tbc_fields.filter((f) => TBC_DROPDOWN_OPTIONS[f]);
+  const handleClose = () => {
+    setDone(false);
+    setSelections({});
+    onClose();
+  };
+
+  const tbcFields = charter.tbc_fields;
+
+  const handleSave = () => {
+    const resolvedFields = tbcFields.filter((f) => {
+      const val = selections[f];
+      return val && val !== 'TBC';
+    });
+
+    setCharter((prev) => {
+      const next = { ...prev };
+      resolvedFields.forEach((f) => {
+        (next as Record<string, unknown>)[f] = selections[f];
+      });
+      next.tbc_fields = prev.tbc_fields.filter((f) => !resolvedFields.includes(f));
+      return next;
+    });
+    setDone(true);
+  };
 
   return (
     <Modal open={open} onClose={handleClose} title="Update TBC Fields" subtitle="RFP-052 · Specialty Rice → Denmark"
       footer={done ? <button onClick={handleClose} className="px-4 py-2.5 bg-primary-500 text-white text-sm font-semibold rounded-lg hover:bg-primary-600 transition">Done</button> :
-        <button onClick={() => setDone(true)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white text-sm font-semibold rounded-lg hover:bg-primary-600 transition">
+        <button onClick={handleSave} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white text-sm font-semibold rounded-lg hover:bg-primary-600 transition">
           <Bell className="w-4 h-4" /> Update & Notify
         </button>
       }
@@ -196,17 +219,17 @@ export function TbcModal({ open, onClose }: { open: boolean; onClose: () => void
       ) : (
         <div className="space-y-5">
           {tbcFields.length === 0 && (
-            <p className="text-sm text-ink-500 text-center py-4">No TBC fields with dropdown options remaining.</p>
+            <p className="text-sm text-ink-500 text-center py-4">No TBC fields remaining.</p>
           )}
           {tbcFields.map((field) => (
             <div key={field}>
               <label className="block text-sm font-medium text-ink-700 mb-2">{CHARTER_LABELS[field as keyof typeof CHARTER_LABELS]}</label>
               <select
-                value={String(charter[field as keyof typeof charter])}
-                onChange={(e) => resolveTbc(field, e.target.value)}
+                value={selections[field] ?? String(charter[field as keyof typeof charter])}
+                onChange={(e) => setSelections((prev) => ({ ...prev, [field]: e.target.value }))}
                 className="w-full px-3.5 py-2.5 border border-ink-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
               >
-                {TBC_DROPDOWN_OPTIONS[field].map((opt) => (
+                {(TBC_DROPDOWN_OPTIONS[field] || []).map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>

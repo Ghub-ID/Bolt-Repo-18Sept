@@ -162,7 +162,7 @@ export default function RfpDetailPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-ink-900 tracking-tight">RFP-052 · Specialty Rice → Denmark</h1>
             <div className="flex items-center gap-3 mt-1.5 text-sm text-ink-500">
-              <span>5,000 MT</span>
+              <span>{charter.volume}</span>
               <span className="text-ink-300">·</span>
               <span>Mundra, IN → Denmark (TBC)</span>
               <span className="text-ink-300">·</span>

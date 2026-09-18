@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Sparkles, ArrowLeft, TrendingUp, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { useVendorData } from '@/context/VendorDataContext';
+import { useRfpCharter } from '@/context/RfpCharterContext';
 import { rfp052Vendors } from '@/data/freightData';
 
 interface ChatMessage {
@@ -71,6 +72,7 @@ function formatAnalystMessage(text: string): string {
 export default function AnalystPage() {
   const navigate = useNavigate();
   const { vendors, loading: dataLoading } = useVendorData();
+  const { charter } = useRfpCharter();
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -296,7 +298,7 @@ export default function AnalystPage() {
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between"><span className="text-ink-500">RFP</span><span className="font-semibold text-ink-800">RFP-052</span></div>
               <div className="flex justify-between"><span className="text-ink-500">Commodity</span><span className="font-medium text-ink-800">Specialty Rice</span></div>
-              <div className="flex justify-between"><span className="text-ink-500">Volume</span><span className="font-medium text-ink-800">5,000 MT</span></div>
+              <div className="flex justify-between"><span className="text-ink-500">Volume</span><span className="font-medium text-ink-800">{charter.volume}</span></div>
               <div className="flex justify-between"><span className="text-ink-500">Route</span><span className="font-medium text-ink-800">Mundra → Denmark</span></div>
               <div className="flex justify-between"><span className="text-ink-500">Window</span><span className="font-medium text-ink-800">Oct 5-20</span></div>
               <div className="flex justify-between"><span className="text-ink-500">Status</span><span className="px-2 py-0.5 rounded bg-primary-200 text-primary-700 text-xs font-medium">Open</span></div>

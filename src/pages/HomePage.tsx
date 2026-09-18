@@ -22,7 +22,7 @@ export default function HomePage() {
 
   const handleSend = () => {
     if (!input.trim()) return;
-    navigate('/rfp/create');
+    navigate('/rfp/create', { state: { initialAsk: input.trim() } });
   };
 
   return (
