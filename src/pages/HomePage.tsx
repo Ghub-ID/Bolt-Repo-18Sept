@@ -67,23 +67,6 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* Stats row */}
-        <div className="mt-12 flex items-center justify-center gap-8 text-center">
-          <div>
-            <div className="text-2xl font-bold text-ink-900">3</div>
-            <div className="text-xs text-ink-500">Open Bids</div>
-          </div>
-          <div className="w-px h-10 bg-ink-200" />
-          <div>
-            <div className="text-2xl font-bold text-ink-900">14</div>
-            <div className="text-xs text-ink-500">Pending Invoices</div>
-          </div>
-          <div className="w-px h-10 bg-ink-200" />
-          <div>
-            <div className="text-2xl font-bold text-ink-900">12</div>
-            <div className="text-xs text-ink-500">Awarded YTD</div>
-          </div>
-        </div>
       </div>
     </div>
   );
