@@ -78,7 +78,12 @@ STEP-BY-STEP LOGIC:
    c. Volume (if missing)
    d. Shipment window (if missing)
    e. Incoterms (if missing)
-   f. Explore new vendors (if missing)
+   f. Free days (if missing)
+   g. Payment terms (if missing)
+   h. Explore new vendors (if missing)
+   Question bank for the new fields:
+   - Free days: OPTIONS: 7 days | 14 days | 21 days | 30 days | TBC
+   - Payment terms: OPTIONS: 15 days from BL | 30 days from BL | 45 days from BL | 60 days from BL | TBC
 5. Ask ONE question at a time. Wait for the user's answer before asking the next.
 6. If a question has multiple valid options, present them as a single-select question in this exact format:
    QUESTION: [question text]
@@ -104,12 +109,18 @@ After all fields are resolved or marked TBC, output the RFP charter as JSON wrap
   "destination": "...",
   "incoterms": "...",
   "shipment_window": "...",
+  "free_days": "...",
+  "payment_terms": "...",
   "rate_validity": "30 days",
-  "free_days": "14 days",
-  "payment_terms": "30 days from BL date",
   "special_requirements": "...",
   "tbc_fields": [...]
 }
+
+Rules for free_days and payment_terms:
+- Populate free_days from the user's selection in the conversation. If the user did not specify and the AI had to skip it, set free_days to "TBC" and add "free_days" to tbc_fields.
+- Populate payment_terms from the user's selection. If the user did not specify, set to "TBC" and add "payment_terms" to tbc_fields.
+- Never default either field. If the user's initial ask contains a free days or payment terms reference (e.g., "with 21 free days"), extract it and skip the question.
+- Do NOT leave these fields blank. If unanswered, they must be "TBC".
 
 DO NOT include vendors_invited or any vendors-related field.`;
 

@@ -22,10 +22,10 @@ export const DEFAULT_CHARTER: RfpCharter = {
   incoterms: 'TBC',
   shipment_window: 'Oct 5 – Oct 20, 2026',
   rate_validity: '30 days',
-  free_days: '14 days',
-  payment_terms: '30 days from BL date',
+  free_days: 'TBC',
+  payment_terms: 'TBC',
   special_requirements: 'Food grade hold, fumigation & EU phytosanitary required',
-  tbc_fields: ['destination', 'incoterms'],
+  tbc_fields: ['destination', 'incoterms', 'free_days', 'payment_terms'],
 };
 
 export const CHARTER_LABELS: Record<keyof Omit<RfpCharter, 'tbc_fields'>, string> = {
@@ -95,15 +95,16 @@ export const TBC_DROPDOWN_OPTIONS: Record<string, { label: string; value: string
   ],
   free_days: [
     { label: '7 days', value: '7 days' },
-    { label: '10 days', value: '10 days' },
     { label: '14 days', value: '14 days' },
     { label: '21 days', value: '21 days' },
+    { label: '30 days', value: '30 days' },
     { label: 'Still TBC', value: 'TBC' },
   ],
   payment_terms: [
-    { label: '30 days from BL date', value: '30 days from BL date' },
-    { label: '45 days from BL date', value: '45 days from BL date' },
-    { label: '60 days from BL date', value: '60 days from BL date' },
+    { label: '15 days from BL', value: '15 days from BL date' },
+    { label: '30 days from BL', value: '30 days from BL date' },
+    { label: '45 days from BL', value: '45 days from BL date' },
+    { label: '60 days from BL', value: '60 days from BL date' },
     { label: 'Still TBC', value: 'TBC' },
   ],
   special_requirements: [
