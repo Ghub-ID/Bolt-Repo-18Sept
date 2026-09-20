@@ -70,21 +70,21 @@ export function useNormalizedVendors(): NormalizedVendor[] {
     let originalUsdAmount: number | null = null;
     if (rateValue && rateValue !== 'NOT_FOUND') {
       const isUSD = /USD|\$/i.test(rateValue) || (currency?.value || '').toUpperCase().includes('USD');
-      if (isUSD) {
-        const num = parseFloat(rateValue.replace(/[^\d.]/g, ''));
+      const numMatch = rateValue.match(/[\d,]+(?:\.\d+)?/);
+      if (numMatch) {
+        const num = parseFloat(numMatch[0].replace(/,/g, ''));
         if (!isNaN(num)) {
-          const inr = Math.round(num * FX_USD_TO_INR);
-          displayRate = '₹' + inr.toLocaleString('en-IN') + '/ton';
-          originalCurrency = 'USD';
-          fxRate = FX_USD_TO_INR;
-          originalUsdAmount = num;
+          if (isUSD) {
+            const inr = Math.round(num * FX_USD_TO_INR);
+            displayRate = '₹' + inr.toLocaleString('en-IN') + '/ton';
+            originalCurrency = 'USD';
+            fxRate = FX_USD_TO_INR;
+            originalUsdAmount = num;
+          } else {
+            displayRate = '₹' + num.toLocaleString('en-IN') + '/ton';
+            originalCurrency = 'INR';
+          }
         }
-      } else if (!rateValue.includes('₹')) {
-        const num = rateValue.match(/[\d,]+/);
-        if (num) displayRate = '₹' + num[0] + '/ton';
-        originalCurrency = 'INR';
-      } else {
-        originalCurrency = 'INR';
       }
     }
 
