@@ -11,7 +11,6 @@ export interface RfpCharter {
   free_days: string;
   payment_terms: string;
   special_requirements: string;
-  vendors_invited: number;
   tbc_fields: string[];
 }
 
@@ -26,7 +25,6 @@ export const DEFAULT_CHARTER: RfpCharter = {
   free_days: '14 days',
   payment_terms: '30 days from BL date',
   special_requirements: 'Food grade hold, fumigation & EU phytosanitary required',
-  vendors_invited: 8,
   tbc_fields: ['destination', 'incoterms'],
 };
 
@@ -41,12 +39,11 @@ export const CHARTER_LABELS: Record<keyof Omit<RfpCharter, 'tbc_fields'>, string
   free_days: 'Free Days',
   payment_terms: 'Payment Terms',
   special_requirements: 'Special Requirements',
-  vendors_invited: 'Vendors Invited',
 };
 
 export const CHARTER_ORDER: (keyof Omit<RfpCharter, 'tbc_fields'>)[] = [
   'commodity', 'volume', 'origin', 'destination', 'incoterms', 'shipment_window',
-  'rate_validity', 'free_days', 'payment_terms', 'special_requirements', 'vendors_invited',
+  'rate_validity', 'free_days', 'payment_terms', 'special_requirements',
 ];
 
 export const TBC_DROPDOWN_OPTIONS: Record<string, { label: string; value: string }[]> = {
@@ -114,12 +111,6 @@ export const TBC_DROPDOWN_OPTIONS: Record<string, { label: string; value: string
     { label: 'Fumigation only', value: 'Fumigation only' },
     { label: 'EU phytosanitary only', value: 'EU phytosanitary only' },
     { label: 'None', value: 'None' },
-    { label: 'Still TBC', value: 'TBC' },
-  ],
-  vendors_invited: [
-    { label: '5', value: '5' },
-    { label: '8', value: '8' },
-    { label: '10', value: '10' },
     { label: 'Still TBC', value: 'TBC' },
   ],
 };

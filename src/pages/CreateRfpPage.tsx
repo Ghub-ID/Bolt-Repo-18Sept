@@ -47,7 +47,6 @@ function parseRfpJson(text: string): RfpCharter | null {
       free_days: parsed.free_days || 'TBC',
       payment_terms: parsed.payment_terms || 'TBC',
       special_requirements: parsed.special_requirements || 'TBC',
-      vendors_invited: typeof parsed.vendors_invited === 'number' ? parsed.vendors_invited : 8,
       tbc_fields: Array.isArray(parsed.tbc_fields) ? parsed.tbc_fields : [],
     };
   } catch {
@@ -295,12 +294,9 @@ export default function CreateRfpPage() {
                       <div key={key} className="py-1.5 border-b border-ink-100 last:border-0">
                         <label className="text-xs text-ink-500 font-medium block mb-1">{CHARTER_LABELS[key]}</label>
                         <input
-                          type={key === 'vendors_invited' ? 'number' : 'text'}
+                          type="text"
                           value={value}
-                          onChange={(e) => {
-                            const val = key === 'vendors_invited' ? parseInt(e.target.value) || 0 : e.target.value;
-                            updateDraft(key, val);
-                          }}
+                          onChange={(e) => updateDraft(key, e.target.value)}
                           className="w-full px-2.5 py-1.5 border border-ink-200 rounded-lg text-sm text-ink-800 focus:outline-none focus:ring-2 focus:ring-primary-300"
                         />
                       </div>
