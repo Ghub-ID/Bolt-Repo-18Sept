@@ -7,10 +7,14 @@ import { PageHeader, PrimaryButton, OutlineButton } from '@/components/ui';
 import Modal from '@/components/Modal';
 import { rfpList } from '@/data/freightData';
 import { useVendorCount } from '@/hooks/useNormalizedVendors';
+import { useRfpCharter } from '@/context/RfpCharterContext';
+
+const isTbc = (v: string) => !v || v.toUpperCase() === 'TBC';
 
 export default function BidsManagementPage() {
   const navigate = useNavigate();
   const counts = useVendorCount();
+  const { charter } = useRfpCharter();
   const [shareOpen, setShareOpen] = useState(false);
   const [sharedPeople, setSharedPeople] = useState<string[]>(['arjun.mehta@oceanlink.com', 'sara.k@nordicfreight.dk']);
   const [email, setEmail] = useState('');
@@ -22,11 +26,17 @@ export default function BidsManagementPage() {
     }
   };
 
-  // Build RFP list with dynamic bid count for RFP-052
+  // Build RFP list with dynamic bid count and charter data for RFP-052
   const displayList = rfpList.map((rfp) => {
-    if (rfp.id === '052' && counts.total > 0) {
-      const bidCountStr = `${counts.total} received`;
-      return { ...rfp, bidCount: bidCountStr };
+    if (rfp.id === '052') {
+      const commodity = isTbc(charter.commodity) ? rfp.commodity : charter.commodity;
+      const destination = isTbc(charter.destination) ? rfp.destination : charter.destination;
+      const origin = isTbc(charter.origin) ? rfp.origin : charter.origin;
+      const window = isTbc(charter.shipment_window) ? rfp.date : charter.shipment_window;
+      const title = `${commodity} → ${destination}`;
+      const subtitle = `${origin} → ${destination} · ${charter.volume} · ${window}`;
+      const bidCountStr = counts.total > 0 ? `${counts.total} received` : rfp.bidCount;
+      return { ...rfp, title, subtitle, bidCount: bidCountStr };
     }
     return rfp;
   });
@@ -74,7 +84,9 @@ export default function BidsManagementPage() {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-ink-800 truncate">{rfp.title}</div>
                   <div className="text-xs text-ink-500 mt-0.5">
-                    {rfp.commodity} · {rfp.origin} → {rfp.destination} · {rfp.date}
+                    {'subtitle' in rfp && rfp.subtitle
+                      ? rfp.subtitle
+                      : `${rfp.commodity} · ${rfp.origin} → ${rfp.destination} · ${rfp.date}`}
                   </div>
                 </div>
                 <div className="shrink-0">

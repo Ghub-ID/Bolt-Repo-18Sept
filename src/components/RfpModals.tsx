@@ -276,6 +276,18 @@ function parseDemurrageRate(value: string): number {
   return parseFloat(match[1].replace(/,/g, ''));
 }
 
+function parseVolumeTonnage(value: string): number {
+  if (!value || value.toUpperCase() === 'TBC') return 0;
+  const cleaned = value.replace(/,/g, '');
+  const numbers = cleaned.match(/\d+(?:\.\d+)?/g);
+  if (!numbers || numbers.length === 0) return 0;
+  const nums = numbers.map((n) => parseFloat(n));
+  if (/shipments? of/i.test(cleaned) && nums.length >= 2) {
+    return nums[0] * nums[1];
+  }
+  return nums[0];
+}
+
 function buildVendorScenarioData(vendors: Record<string, import('@/context/VendorDataContext').ExtractedVendor>): VendorScenarioData[] {
   return Object.values(vendors)
     .filter((v) => v.fields.length > 0)
@@ -316,10 +328,15 @@ function formatINR(amount: number): string {
 
 export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { vendors } = useVendorData();
+  const { charter } = useRfpCharter();
   const [splitCount, setSplitCount] = useState(2);
   const [passedOnly, setPassedOnly] = useState(false);
   const [pastOnly, setPastOnly] = useState(false);
   const [demurrage, setDemurrage] = useState(24);
+
+  const parsedTonnage = parseVolumeTonnage(charter.volume);
+  const volumeDefaulted = parsedTonnage === 0;
+  const totalVolume = volumeDefaulted ? 30 : parsedTonnage;
 
   const vendorData = buildVendorScenarioData(vendors);
 
@@ -332,7 +349,6 @@ export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () =>
   const combos = combinations(filteredVendors, splitCount);
 
   const results = combos.map((combo) => {
-    const totalVolume = 30;
     const perVendorVolume = totalVolume / combo.length;
     let totalCost = 0;
     const riskNotes: string[] = [];
@@ -432,6 +448,14 @@ export function ScenarioModal({ open, onClose }: { open: boolean; onClose: () =>
                 <p className="text-xs text-ink-500 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 text-warn-500 mt-0.5 shrink-0" />
                   At {demurrage} demurrage hours, the recommended split saves {formatINR(Math.round(topResults[1].totalCost - topResults[0].totalCost))} vs the next-best alternative.
+                </p>
+              )}
+              <p className="text-xs text-ink-500">
+                Calculated on {totalVolume.toLocaleString('en-IN')} tons at {demurrage} hours demurrage.
+              </p>
+              {volumeDefaulted && (
+                <p className="text-xs text-warn-700 bg-warn-50 border border-warn-100 rounded-lg px-3 py-2">
+                  Volume not yet confirmed. Calculations assume 30 tons. Update in RFP charter.
                 </p>
               )}
             </div>

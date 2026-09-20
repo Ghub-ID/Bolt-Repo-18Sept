@@ -135,13 +135,13 @@ export default function RfpDetailPage() {
         <BackButton to="/bids" label="Back to Bids" />
         <div className="flex items-start justify-between gap-4 mt-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-ink-900 tracking-tight">RFP-052 · Specialty Rice → Denmark</h1>
+            <h1 className="text-2xl font-bold text-ink-900 tracking-tight">RFP-052 · {charter.commodity} → {charter.destination}</h1>
             <div className="flex items-center gap-3 mt-1.5 text-sm text-ink-500">
               <span>{charter.volume}</span>
               <span className="text-ink-300">·</span>
-              <span>Mundra, IN → Denmark (TBC)</span>
+              <span>{charter.origin} → {charter.destination}</span>
               <span className="text-ink-300">·</span>
-              <span>Oct 5 – Oct 20, 2026</span>
+              <span>{charter.shipment_window}</span>
               <span className="text-ink-300">·</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-100 text-primary-700 text-xs font-medium">Open</span>
             </div>
@@ -388,7 +388,7 @@ export default function RfpDetailPage() {
       <ApproveModal open={modal?.type === 'approve'} onClose={() => setModal(null)} vendorName={modal?.vendor?.name || ''} />
       <ClarifyModal open={modal?.type === 'clarify'} onClose={() => setModal(null)} vendorName={modal?.vendor?.name || ''} />
       <DeclineModal open={modal?.type === 'decline'} onClose={() => setModal(null)} vendorName={modal?.vendor?.name || ''} />
-      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} context="RFP-052 · Specialty Rice → Denmark" />
+      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} context={`RFP-052 · ${charter.commodity} → ${charter.destination}`} />
       <TbcModal open={tbcOpen} onClose={() => setTbcOpen(false)} />
       <ScenarioModal open={scenarioOpen} onClose={() => setScenarioOpen(false)} />
       <QuestionnaireModal open={questionnaireOpen} onClose={() => setQuestionnaireOpen(false)} filterVendor={questionnaireFilter} />

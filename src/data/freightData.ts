@@ -4,6 +4,7 @@ export interface RfpListItem {
   id: string;
   number: string;
   title: string;
+  subtitle?: string;
   commodity: string;
   origin: string;
   destination: string;
